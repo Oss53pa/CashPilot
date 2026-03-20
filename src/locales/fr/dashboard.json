@@ -1,0 +1,20 @@
+{
+  "title": "Tableau de bord",
+  "welcome": "Bon retour, {{name}}",
+  "cards": {
+    "totalBalance": "Solde total",
+    "monthlyReceipts": "Encaissements du mois",
+    "monthlyDisbursements": "Décaissements du mois",
+    "netCashFlow": "Flux de trésorerie net",
+    "pendingPayments": "Paiements en attente",
+    "overduePayments": "Paiements en retard",
+    "forecastAccuracy": "Précision des prévisions",
+    "alerts": "Alertes"
+  },
+  "charts": {
+    "cashFlowTrend": "Tendance des flux de trésorerie",
+    "balanceEvolution": "Évolution du solde",
+    "topCategories": "Principales catégories",
+    "forecastVsActual": "Prévisions vs Réalisé"
+  }
+}

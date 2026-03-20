@@ -1,0 +1,32 @@
+{
+  "title": "Budget",
+  "createBudget": "Create Budget",
+  "editBudget": "Edit Budget",
+  "versions": "Versions",
+  "compare": "Compare Versions",
+  "fields": {
+    "name": "Name",
+    "fiscalYear": "Fiscal year",
+    "version": "Version",
+    "status": "Status"
+  },
+  "grid": {
+    "category": "Category",
+    "subcategory": "Subcategory",
+    "type": "Type",
+    "jan": "January",
+    "feb": "February",
+    "mar": "March",
+    "apr": "April",
+    "may": "May",
+    "jun": "June",
+    "jul": "July",
+    "aug": "August",
+    "sep": "September",
+    "oct": "October",
+    "nov": "November",
+    "dec": "December",
+    "total": "Total",
+    "actions": "Actions"
+  }
+}

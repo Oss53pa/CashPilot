@@ -1,0 +1,29 @@
+{
+  "title": "Forecast",
+  "createForecast": "Create Forecast",
+  "horizons": "Horizons",
+  "fields": {
+    "type": "Type",
+    "category": "Category",
+    "amount": "Amount",
+    "forecastDate": "Forecast date",
+    "horizon": "Horizon",
+    "confidence": "Confidence",
+    "source": "Source",
+    "notes": "Notes"
+  },
+  "horizons": {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly"
+  },
+  "dashboard": {
+    "shortTerm": "Short Term",
+    "mediumTerm": "Medium Term",
+    "longTerm": "Long Term",
+    "accuracy": "Accuracy",
+    "deviation": "Deviation",
+    "recalibrate": "Recalibrate"
+  }
+}

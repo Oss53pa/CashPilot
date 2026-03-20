@@ -1,0 +1,26 @@
+{
+  "title": "Settings",
+  "general": "General",
+  "users": "Users",
+  "companies": "Companies",
+  "security": "Security",
+  "notifications": "Notifications",
+  "generalSettings": {
+    "language": "Language",
+    "theme": "Theme",
+    "dateFormat": "Date format",
+    "currency": "Currency",
+    "timezone": "Timezone"
+  },
+  "usersSettings": {
+    "addUser": "Add User",
+    "editUser": "Edit User",
+    "roles": "Roles",
+    "permissions": "Permissions"
+  },
+  "companiesSettings": {
+    "addCompany": "Add Company",
+    "editCompany": "Edit Company",
+    "fiscalYear": "Fiscal Year"
+  }
+}

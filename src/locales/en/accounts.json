@@ -1,0 +1,31 @@
+{
+  "title": "Accounts",
+  "addAccount": "Add Account",
+  "editAccount": "Edit Account",
+  "accountDetails": "Account Details",
+  "fields": {
+    "bankName": "Bank name",
+    "accountNumber": "Account number",
+    "accountName": "Account name",
+    "currency": "Currency",
+    "accountType": "Account type",
+    "initialBalance": "Initial balance",
+    "currentBalance": "Current balance",
+    "iban": "IBAN",
+    "swiftCode": "SWIFT / BIC code",
+    "isActive": "Active"
+  },
+  "types": {
+    "current": "Current account",
+    "savings": "Savings account",
+    "mobileMoney": "Mobile money",
+    "cash": "Cash"
+  },
+  "import": {
+    "importStatement": "Import Bank Statement",
+    "uploadFile": "Upload File",
+    "mapping": "Field Mapping",
+    "preview": "Preview",
+    "confirm": "Confirm Import"
+  }
+}

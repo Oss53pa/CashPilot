@@ -1,0 +1,20 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back, {{name}}",
+  "cards": {
+    "totalBalance": "Total Balance",
+    "monthlyReceipts": "Monthly Receipts",
+    "monthlyDisbursements": "Monthly Disbursements",
+    "netCashFlow": "Net Cash Flow",
+    "pendingPayments": "Pending Payments",
+    "overduePayments": "Overdue Payments",
+    "forecastAccuracy": "Forecast Accuracy",
+    "alerts": "Alerts"
+  },
+  "charts": {
+    "cashFlowTrend": "Cash Flow Trend",
+    "balanceEvolution": "Balance Evolution",
+    "topCategories": "Top Categories",
+    "forecastVsActual": "Forecast vs Actual"
+  }
+}

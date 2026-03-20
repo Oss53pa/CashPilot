@@ -1,0 +1,220 @@
+{
+  "title": "Proph3t Treasury Engine",
+  "forecasts": {
+    "title": "Prévisions IA",
+    "description": "Prévisions multi-modèles avec intervalles de confiance",
+    "model": "Modèle",
+    "horizon": "Horizon",
+    "mape": "MAPE",
+    "confidence": "Confiance",
+    "currentPosition": "Position actuelle",
+    "recalculate": "Recalculer",
+    "noForecasts": "Aucune prévision disponible",
+    "noForecastsDescription": "Lancez un calcul de prévision pour voir les résultats.",
+    "categories": "catégories",
+    "forecastChart": "Prévisions de trésorerie",
+    "scenario": {
+      "base": "Scénario de base",
+      "optimistic": "Scénario optimiste",
+      "pessimistic": "Scénario pessimiste"
+    },
+    "models": {
+      "wma": "Moyenne Mobile Pondérée",
+      "holt_winters": "Holt-Winters",
+      "arima": "ARIMA",
+      "sarima": "SARIMA",
+      "prophet": "Prophet",
+      "lstm": "LSTM",
+      "ensemble": "Ensemble Hybride"
+    },
+    "horizons": {
+      "7d": "J+7",
+      "30d": "J+30",
+      "90d": "J+90",
+      "365d": "J+365"
+    }
+  },
+  "alerts": {
+    "title": "Alertes Prédictives",
+    "description": "Alertes générées automatiquement par le moteur IA",
+    "criticalCount": "Critiques",
+    "highCount": "Hautes",
+    "totalOpen": "Total ouvertes",
+    "resolutionRate": "Taux de résolution",
+    "noAlerts": "Aucune alerte",
+    "noAlertsDescription": "Aucune alerte ne correspond à vos filtres.",
+    "causes": "Causes identifiées",
+    "recommendations": "Actions recommandées",
+    "acknowledge": "Acquitter",
+    "dismiss": "Rejeter",
+    "action": "Action en cours",
+    "resolve": "Résoudre",
+    "priority": {
+      "critical": "Critique",
+      "high": "Haute",
+      "medium": "Moyenne",
+      "low": "Basse"
+    },
+    "status": {
+      "open": "Ouverte",
+      "acknowledged": "Acquittée",
+      "actioned": "En cours",
+      "resolved": "Résolue",
+      "dismissed": "Rejetée"
+    },
+    "rules": {
+      "liquidity_tension": "Tension de liquidité imminente",
+      "recovery_risk": "Risque de recouvrement",
+      "account_imbalance": "Déséquilibre inter-comptes",
+      "covenant_breach_risk": "Covenant bancaire en risque",
+      "investment_opportunity": "Excédent plaçable détecté",
+      "capex_tension": "Tension CAPEX",
+      "critical_tenant_score": "Score locataire critique",
+      "critical_anomaly": "Anomalie critique"
+    },
+    "category": {
+      "all": "Toutes",
+      "liquidity": "Liquidité",
+      "receivables": "Créances",
+      "accounts": "Comptes",
+      "debt": "Dette",
+      "investment": "Investissement",
+      "fraud": "Fraude"
+    }
+  },
+  "scoring": {
+    "title": "Scoring Locataires",
+    "description": "Évaluation comportementale des locataires par XGBoost",
+    "score": "Score",
+    "totalScored": "Total scorés",
+    "avgScore": "Score moyen",
+    "degradingCount": "En dégradation",
+    "distribution": "Distribution",
+    "recalculate": "Recalculer",
+    "noScores": "Aucun score",
+    "noScoresDescription": "Aucun locataire ne correspond à vos filtres.",
+    "factors": "Facteurs analysés",
+    "riskFactors": "Facteurs de risque principaux",
+    "scoreHistory": "Historique des scores",
+    "classification": {
+      "excellent": "Excellent",
+      "good": "Bon",
+      "watch": "À surveiller",
+      "at_risk": "À risque",
+      "critical": "Critique"
+    },
+    "trend": {
+      "improving": "En amélioration",
+      "stable": "Stable",
+      "degrading": "En dégradation",
+      "critical_degradation": "Dégradation critique"
+    },
+    "action": {
+      "none": "Aucune action requise",
+      "monitor": "Surveillance renforcée",
+      "preventive_contact": "Contact préventif",
+      "formal_notice": "Mise en demeure",
+      "legal_procedure": "Procédure judiciaire"
+    }
+  },
+  "narratives": {
+    "title": "Analyses Narratives",
+    "description": "Rapports hebdomadaires générés automatiquement",
+    "generate": "Générer",
+    "print": "Imprimer",
+    "noNarrative": "Aucune analyse narrative",
+    "noNarrativeDescription": "Générez votre première analyse narrative hebdomadaire.",
+    "generateNow": "Générer maintenant",
+    "latestReport": "Dernier rapport",
+    "selectReport": "Sélectionner un rapport",
+    "sentiment": {
+      "positive": "Positif",
+      "neutral": "Neutre",
+      "warning": "Attention",
+      "critical": "Critique"
+    }
+  },
+  "whatif": {
+    "title": "Simulation What-If",
+    "description": "Posez vos questions en langage naturel",
+    "placeholder": "Ex : Si locataire MY PLACE ne paie pas en avril...",
+    "history": "Historique",
+    "historyTitle": "Historique des simulations",
+    "noHistory": "Aucune simulation passée",
+    "simulating": "Simulation en cours...",
+    "suggestions": {
+      "no_payment": "Si le locataire X ne paie pas",
+      "invest": "Si je place 20M en DAT",
+      "max_capex": "Budget CAPEX maximum disponible",
+      "days_of_cash": "Combien de jours de trésorerie",
+      "stress_test": "Stress test : 30% d'impayés"
+    }
+  },
+  "fraud": {
+    "title": "Détection de Fraude",
+    "description": "Détection temps réel des patterns de fraude",
+    "openAlerts": "Alertes ouvertes",
+    "blockedTransactions": "Transactions bloquées",
+    "avgScore": "Score moyen",
+    "criticalAlerts": "Alertes critiques",
+    "noAlerts": "Aucune alerte de fraude",
+    "noAlertsDescription": "Aucune alerte ne correspond à vos filtres.",
+    "evidence": "Preuves",
+    "investigationNotes": "Notes d'investigation",
+    "investigationPlaceholder": "Ajoutez vos notes d'investigation...",
+    "investigate": "Investiguer",
+    "clearAlert": "Lever l'alerte",
+    "confirmFraud": "Confirmer fraude",
+    "filterByStatus": "Filtrer par statut",
+    "allStatuses": "Tous les statuts",
+    "rules": {
+      "payment_smurfing": "Fractionnement de paiement",
+      "ghost_vendor": "Fournisseur fantôme",
+      "duplicate_payment": "Doublon de paiement",
+      "rib_change_then_payment": "Modification RIB + paiement",
+      "cash_register_manipulation": "Manipulation caisse",
+      "unauthorized_transfer": "Transfert non autorisé",
+      "off_hours_transaction": "Transaction hors horaires",
+      "excess_cash_not_deposited": "Excédent caisse non reversé"
+    },
+    "status": {
+      "open": "Ouverte",
+      "investigating": "En investigation",
+      "cleared": "Levée",
+      "confirmed": "Confirmée"
+    },
+    "blocked": "Transaction bloquée"
+  },
+  "performance": {
+    "title": "Performance Moteur",
+    "description": "Précision des modèles et santé du moteur IA",
+    "overallMape": "MAPE global",
+    "activeModels": "Modèles actifs",
+    "lastRun": "Dernier calcul",
+    "categoriesCovered": "Catégories couvertes",
+    "mapeEvolution": "Évolution du MAPE",
+    "modelComparison": "Comparaison des modèles",
+    "predictedVsActual": "Prévu vs Réalisé",
+    "noData": "Pas encore de données de performance",
+    "noDataDescription": "Les métriques de performance apparaîtront une fois les prévisions vérifiées contre les réalisés.",
+    "metrics": {
+      "mape": "MAPE",
+      "mae": "MAE",
+      "rmse": "RMSE",
+      "bias": "Biais"
+    },
+    "health": {
+      "healthy": "Opérationnel",
+      "degraded": "Dégradé",
+      "error": "En erreur"
+    }
+  },
+  "anomalies": {
+    "severity": {
+      "normal": "Normal",
+      "watch": "À surveiller",
+      "alert": "Alerte",
+      "critical": "Critique"
+    }
+  }
+}

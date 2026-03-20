@@ -1,0 +1,17 @@
+{
+  "title": "Capital Expenditure",
+  "addOperation": "Add Operation",
+  "dashboard": "CAPEX Dashboard",
+  "schedule": "Schedule",
+  "fields": {
+    "name": "Name",
+    "description": "Description",
+    "category": "Category",
+    "budgetAmount": "Budget amount",
+    "committedAmount": "Committed amount",
+    "spentAmount": "Spent amount",
+    "status": "Status",
+    "startDate": "Start date",
+    "endDate": "End date"
+  }
+}

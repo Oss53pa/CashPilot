@@ -1,0 +1,14 @@
+{
+  "title": "Reports",
+  "generate": "Generate Report",
+  "export": "Export",
+  "print": "Print",
+  "types": {
+    "cashPosition": "Cash Position",
+    "cashFlow": "Cash Flow Statement",
+    "budget": "Budget Report",
+    "forecast": "Forecast Report",
+    "aging": "Aging Report",
+    "bankReconciliation": "Bank Reconciliation"
+  }
+}

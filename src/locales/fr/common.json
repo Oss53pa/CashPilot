@@ -1,0 +1,108 @@
+{
+  "app": {
+    "name": "CashPilot",
+    "tagline": "Gestion intelligente de trésorerie"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "reset": "Réinitialiser",
+    "refresh": "Actualiser",
+    "loading": "Chargement…",
+    "noData": "Aucune donnée disponible",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "validation": {
+    "required": "Ce champ est obligatoire",
+    "invalidEmail": "Veuillez saisir une adresse e-mail valide",
+    "minLength": "Doit contenir au moins {{min}} caractères",
+    "maxLength": "Ne doit pas dépasser {{max}} caractères",
+    "invalidAmount": "Veuillez saisir un montant valide",
+    "invalidDate": "Veuillez saisir une date valide"
+  },
+  "pagination": {
+    "page": "Page",
+    "of": "sur",
+    "perPage": "Par page",
+    "showing": "Affichage de",
+    "results": "résultats",
+    "first": "Première",
+    "last": "Dernière",
+    "next": "Suivante",
+    "previous": "Précédente"
+  },
+  "status": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "approved": "Approuvé",
+    "rejected": "Rejeté",
+    "cancelled": "Annulé",
+    "draft": "Brouillon",
+    "archived": "Archivé"
+  },
+  "time": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "thisWeek": "Cette semaine",
+    "thisMonth": "Ce mois-ci",
+    "thisYear": "Cette année",
+    "lastMonth": "Le mois dernier",
+    "lastYear": "L'année dernière"
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "collections": "Encaissements",
+    "disbursements": "Décaissements",
+    "forecasts": "Prévisions",
+    "bankAccounts": "Comptes bancaires",
+    "cashMobile": "Caisse & Mobile",
+    "budget": "Budget",
+    "counterparties": "Contreparties",
+    "internalTransfers": "Virements internes",
+    "capex": "CAPEX",
+    "debt": "Emprunts",
+    "investments": "Placements",
+    "creditLines": "Lignes de crédit",
+    "disputes": "Contentieux",
+    "taxes": "Fiscalité",
+    "approvals": "Approbations",
+    "reports": "Rapports",
+    "auditTrail": "Journal d'audit",
+    "settings": "Paramètres",
+    "collapse": "Réduire",
+    "sections": {
+      "treasury": "Trésorerie",
+      "accounts": "Comptes",
+      "management": "Gestion",
+      "financing": "Financement",
+      "risks": "Risques",
+      "workflows": "Workflows",
+      "admin": "Administration",
+      "proph3t": "Proph3t IA"
+    },
+    "proph3t": {
+      "forecasts": "Prévisions IA",
+      "alerts": "Alertes prédictives",
+      "scoring": "Scoring locataires",
+      "narratives": "Analyses narratives",
+      "whatif": "Simulation What-If",
+      "fraud": "Détection fraude",
+      "performance": "Performance moteur"
+    }
+  }
+}

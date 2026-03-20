@@ -1,0 +1,29 @@
+{
+  "title": "Prévisions",
+  "createForecast": "Créer une prévision",
+  "horizons": "Horizons",
+  "fields": {
+    "type": "Type",
+    "category": "Catégorie",
+    "amount": "Montant",
+    "forecastDate": "Date de prévision",
+    "horizon": "Horizon",
+    "confidence": "Confiance",
+    "source": "Source",
+    "notes": "Notes"
+  },
+  "horizons": {
+    "daily": "Quotidien",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuel",
+    "quarterly": "Trimestriel"
+  },
+  "dashboard": {
+    "shortTerm": "Court terme",
+    "mediumTerm": "Moyen terme",
+    "longTerm": "Long terme",
+    "accuracy": "Précision",
+    "deviation": "Écart",
+    "recalibrate": "Recalibrer"
+  }
+}

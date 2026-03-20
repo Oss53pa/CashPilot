@@ -1,0 +1,20 @@
+{
+  "title": "Contentieux",
+  "addDispute": "Ajouter un contentieux",
+  "timeline": "Chronologie",
+  "exitScenarios": "Scénarios de sortie",
+  "fields": {
+    "reference": "Référence",
+    "counterparty": "Tiers",
+    "type": "Type",
+    "amountDisputed": "Montant en litige",
+    "amountProvision": "Montant de la provision",
+    "status": "Statut",
+    "openedDate": "Date d'ouverture",
+    "lawyer": "Avocat",
+    "court": "Tribunal",
+    "nextHearing": "Prochaine audience",
+    "exitScenario": "Scénario de sortie",
+    "probability": "Probabilité"
+  }
+}

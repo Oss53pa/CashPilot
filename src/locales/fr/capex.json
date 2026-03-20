@@ -1,0 +1,17 @@
+{
+  "title": "Dépenses d'investissement",
+  "addOperation": "Ajouter une opération",
+  "dashboard": "Tableau de bord CAPEX",
+  "schedule": "Échéancier",
+  "fields": {
+    "name": "Nom",
+    "description": "Description",
+    "category": "Catégorie",
+    "budgetAmount": "Montant budgété",
+    "committedAmount": "Montant engagé",
+    "spentAmount": "Montant dépensé",
+    "status": "Statut",
+    "startDate": "Date de début",
+    "endDate": "Date de fin"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "receipts": {
+    "title": "Receipts",
+    "addReceipt": "Add Receipt"
+  },
+  "disbursements": {
+    "title": "Disbursements",
+    "addDisbursement": "Add Disbursement"
+  },
+  "fields": {
+    "type": "Type",
+    "category": "Category",
+    "subcategory": "Subcategory",
+    "amount": "Amount",
+    "currency": "Currency",
+    "valueDate": "Value date",
+    "operationDate": "Operation date",
+    "reference": "Reference",
+    "description": "Description",
+    "counterparty": "Counterparty",
+    "status": "Status",
+    "bankAccount": "Bank account"
+  }
+}

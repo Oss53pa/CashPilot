@@ -1,0 +1,24 @@
+{
+  "receipts": {
+    "title": "Encaissements",
+    "addReceipt": "Ajouter un encaissement"
+  },
+  "disbursements": {
+    "title": "Décaissements",
+    "addDisbursement": "Ajouter un décaissement"
+  },
+  "fields": {
+    "type": "Type",
+    "category": "Catégorie",
+    "subcategory": "Sous-catégorie",
+    "amount": "Montant",
+    "currency": "Devise",
+    "valueDate": "Date de valeur",
+    "operationDate": "Date d'opération",
+    "reference": "Référence",
+    "description": "Description",
+    "counterparty": "Tiers",
+    "status": "Statut",
+    "bankAccount": "Compte bancaire"
+  }
+}

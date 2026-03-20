@@ -1,0 +1,26 @@
+{
+  "title": "Paramètres",
+  "general": "Général",
+  "users": "Utilisateurs",
+  "companies": "Sociétés",
+  "security": "Sécurité",
+  "notifications": "Notifications",
+  "generalSettings": {
+    "language": "Langue",
+    "theme": "Thème",
+    "dateFormat": "Format de date",
+    "currency": "Devise",
+    "timezone": "Fuseau horaire"
+  },
+  "usersSettings": {
+    "addUser": "Ajouter un utilisateur",
+    "editUser": "Modifier l'utilisateur",
+    "roles": "Rôles",
+    "permissions": "Permissions"
+  },
+  "companiesSettings": {
+    "addCompany": "Ajouter une société",
+    "editCompany": "Modifier la société",
+    "fiscalYear": "Exercice fiscal"
+  }
+}

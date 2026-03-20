@@ -1,0 +1,14 @@
+{
+  "title": "Rapports",
+  "generate": "Générer un rapport",
+  "export": "Exporter",
+  "print": "Imprimer",
+  "types": {
+    "cashPosition": "Position de trésorerie",
+    "cashFlow": "Tableau des flux de trésorerie",
+    "budget": "Rapport budgétaire",
+    "forecast": "Rapport prévisionnel",
+    "aging": "Balance âgée",
+    "bankReconciliation": "Rapprochement bancaire"
+  }
+}

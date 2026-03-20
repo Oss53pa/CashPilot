@@ -1,0 +1,70 @@
+// Tenant-level roles (apply across all companies in a tenant)
+export const TENANT_ROLES = ['tenant_admin', 'group_cfo', 'group_viewer'] as const;
+
+// Company-level roles (scoped to a specific company)
+export const COMPANY_ROLES = ['company_cfo', 'company_manager', 'treasurer', 'viewer', 'auditor'] as const;
+
+// All roles combined
+export const ROLES = [...TENANT_ROLES, ...COMPANY_ROLES] as const;
+export const CURRENCIES = ['XOF', 'XAF', 'GNF', 'USD', 'EUR', 'GBP', 'MAD', 'TND', 'NGN', 'KES', 'ZAR', 'GHS', 'TZS', 'UGX', 'RWF', 'ETB'] as const;
+export const CASH_FLOW_TYPES = ['receipt', 'disbursement'] as const;
+export const CASH_FLOW_STATUSES = ['pending', 'validated', 'reconciled', 'cancelled'] as const;
+export const FORECAST_HORIZONS = ['daily', 'weekly', 'monthly', 'quarterly'] as const;
+export const BUDGET_STATUSES = ['draft', 'submitted', 'approved', 'archived'] as const;
+export const ACCOUNT_TYPES = ['current', 'savings', 'mobile_money', 'cash'] as const;
+export const PAYMENT_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
+export const PAYMENT_STATUSES = ['draft', 'pending_approval', 'approved', 'rejected', 'paid', 'cancelled'] as const;
+export const DISPUTE_STATUSES = ['open', 'in_progress', 'settled', 'closed', 'written_off'] as const;
+export const CAPEX_CATEGORIES = ['equipment', 'vehicle', 'building', 'it', 'other'] as const;
+export const DEBT_TYPES = ['term_loan', 'revolving', 'overdraft', 'leasing', 'bond'] as const;
+export const INVESTMENT_TYPES = ['term_deposit', 'treasury_bill', 'money_market', 'bond', 'other'] as const;
+export const ALERT_SEVERITIES = ['info', 'warning', 'critical'] as const;
+export const COUNTERPARTY_TYPES = ['customer', 'supplier', 'employee', 'government', 'other'] as const;
+export const FORECAST_SOURCES = ['manual', 'recurring', 'ai'] as const;
+export const CAPEX_STATUSES = ['planned', 'approved', 'in_progress', 'completed', 'cancelled'] as const;
+export const DEBT_STATUSES = ['active', 'fully_repaid', 'defaulted', 'restructured'] as const;
+export const INVESTMENT_STATUSES = ['active', 'matured', 'withdrawn'] as const;
+export const CREDIT_LINE_TYPES = ['overdraft', 'revolving', 'guarantee', 'letter_of_credit'] as const;
+export const CREDIT_LINE_STATUSES = ['active', 'expired', 'suspended'] as const;
+export const TRANSFER_STATUSES = ['pending', 'executed', 'cancelled'] as const;
+export const DISPUTE_TYPES = ['litigation', 'arbitration', 'mediation', 'recovery'] as const;
+export const EXIT_SCENARIOS = ['favorable', 'neutral', 'unfavorable'] as const;
+export const PAYMENT_FREQUENCIES = ['monthly', 'quarterly', 'semi_annual', 'annual'] as const;
+export const TAX_TYPES = ['vat', 'corporate_tax', 'payroll_tax', 'withholding', 'customs', 'other'] as const;
+export const TAX_STATUSES = ['upcoming', 'paid', 'overdue', 'contested'] as const;
+export const DEPOSIT_TYPES = ['rental', 'customs', 'utility', 'other'] as const;
+export const DEPOSIT_STATUSES = ['active', 'released', 'forfeited'] as const;
+export const ALERT_TYPES = ['low_balance', 'high_balance', 'payment_due', 'covenant_breach', 'budget_overrun', 'forecast_deviation'] as const;
+
+export type Currency = typeof CURRENCIES[number];
+export type TenantRole = typeof TENANT_ROLES[number];
+export type CompanyRole = typeof COMPANY_ROLES[number];
+export type Role = typeof ROLES[number];
+export type CashFlowType = typeof CASH_FLOW_TYPES[number];
+export type CashFlowStatus = typeof CASH_FLOW_STATUSES[number];
+export type ForecastHorizon = typeof FORECAST_HORIZONS[number];
+export type BudgetStatus = typeof BUDGET_STATUSES[number];
+export type AccountType = typeof ACCOUNT_TYPES[number];
+export type PaymentPriority = typeof PAYMENT_PRIORITIES[number];
+export type PaymentStatus = typeof PAYMENT_STATUSES[number];
+export type DisputeStatus = typeof DISPUTE_STATUSES[number];
+export type CapexCategory = typeof CAPEX_CATEGORIES[number];
+export type DebtType = typeof DEBT_TYPES[number];
+export type InvestmentType = typeof INVESTMENT_TYPES[number];
+export type AlertSeverity = typeof ALERT_SEVERITIES[number];
+export type CounterpartyType = typeof COUNTERPARTY_TYPES[number];
+export type ForecastSource = typeof FORECAST_SOURCES[number];
+export type CapexStatus = typeof CAPEX_STATUSES[number];
+export type DebtStatus = typeof DEBT_STATUSES[number];
+export type InvestmentStatus = typeof INVESTMENT_STATUSES[number];
+export type CreditLineType = typeof CREDIT_LINE_TYPES[number];
+export type CreditLineStatus = typeof CREDIT_LINE_STATUSES[number];
+export type TransferStatus = typeof TRANSFER_STATUSES[number];
+export type DisputeType = typeof DISPUTE_TYPES[number];
+export type ExitScenario = typeof EXIT_SCENARIOS[number];
+export type PaymentFrequency = typeof PAYMENT_FREQUENCIES[number];
+export type TaxType = typeof TAX_TYPES[number];
+export type TaxStatus = typeof TAX_STATUSES[number];
+export type DepositType = typeof DEPOSIT_TYPES[number];
+export type DepositStatus = typeof DEPOSIT_STATUSES[number];
+export type AlertType = typeof ALERT_TYPES[number];

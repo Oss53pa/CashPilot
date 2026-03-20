@@ -1,0 +1,20 @@
+{
+  "title": "Disputes",
+  "addDispute": "Add Dispute",
+  "timeline": "Timeline",
+  "exitScenarios": "Exit Scenarios",
+  "fields": {
+    "reference": "Reference",
+    "counterparty": "Counterparty",
+    "type": "Type",
+    "amountDisputed": "Disputed amount",
+    "amountProvision": "Provision amount",
+    "status": "Status",
+    "openedDate": "Opened date",
+    "lawyer": "Lawyer",
+    "court": "Court",
+    "nextHearing": "Next hearing",
+    "exitScenario": "Exit scenario",
+    "probability": "Probability"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "title": "Tiers",
+  "addCounterparty": "Ajouter un tiers",
+  "editCounterparty": "Modifier le tiers",
+  "profile": "Profil du tiers",
+  "fields": {
+    "name": "Nom",
+    "shortName": "Nom abrégé",
+    "type": "Type",
+    "taxId": "Numéro fiscal",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "paymentTerms": "Conditions de paiement",
+    "scoring": "Scoring",
+    "isActive": "Actif"
+  },
+  "types": {
+    "customer": "Client",
+    "supplier": "Fournisseur",
+    "employee": "Employé",
+    "government": "Administration publique",
+    "other": "Autre"
+  }
+}

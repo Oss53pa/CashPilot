@@ -1,0 +1,31 @@
+{
+  "title": "Comptes",
+  "addAccount": "Ajouter un compte",
+  "editAccount": "Modifier le compte",
+  "accountDetails": "Détails du compte",
+  "fields": {
+    "bankName": "Nom de la banque",
+    "accountNumber": "Numéro de compte",
+    "accountName": "Nom du compte",
+    "currency": "Devise",
+    "accountType": "Type de compte",
+    "initialBalance": "Solde initial",
+    "currentBalance": "Solde actuel",
+    "iban": "IBAN",
+    "swiftCode": "Code SWIFT / BIC",
+    "isActive": "Actif"
+  },
+  "types": {
+    "current": "Compte courant",
+    "savings": "Compte épargne",
+    "mobileMoney": "Mobile money",
+    "cash": "Caisse"
+  },
+  "import": {
+    "importStatement": "Importer un relevé bancaire",
+    "uploadFile": "Télécharger le fichier",
+    "mapping": "Correspondance des champs",
+    "preview": "Aperçu",
+    "confirm": "Confirmer l'import"
+  }
+}

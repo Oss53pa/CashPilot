@@ -1,0 +1,108 @@
+{
+  "app": {
+    "name": "CashPilot",
+    "tagline": "Smart cash flow management"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "noData": "No data available",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must not exceed {{max}} characters",
+    "invalidAmount": "Please enter a valid amount",
+    "invalidDate": "Please enter a valid date"
+  },
+  "pagination": {
+    "page": "Page",
+    "of": "of",
+    "perPage": "Per page",
+    "showing": "Showing",
+    "results": "results",
+    "first": "First",
+    "last": "Last",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "draft": "Draft",
+    "archived": "Archived"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "lastMonth": "Last month",
+    "lastYear": "Last year"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "collections": "Collections",
+    "disbursements": "Disbursements",
+    "forecasts": "Forecasts",
+    "bankAccounts": "Bank Accounts",
+    "cashMobile": "Cash & Mobile",
+    "budget": "Budget",
+    "counterparties": "Counterparties",
+    "internalTransfers": "Internal Transfers",
+    "capex": "CAPEX",
+    "debt": "Debt",
+    "investments": "Investments",
+    "creditLines": "Credit Lines",
+    "disputes": "Disputes",
+    "taxes": "Taxes",
+    "approvals": "Approvals",
+    "reports": "Reports",
+    "auditTrail": "Audit Trail",
+    "settings": "Settings",
+    "collapse": "Collapse",
+    "sections": {
+      "treasury": "Treasury",
+      "accounts": "Accounts",
+      "management": "Management",
+      "financing": "Financing",
+      "risks": "Risks",
+      "workflows": "Workflows",
+      "admin": "Administration",
+      "proph3t": "Proph3t AI"
+    },
+    "proph3t": {
+      "forecasts": "AI Forecasts",
+      "alerts": "Predictive Alerts",
+      "scoring": "Tenant Scoring",
+      "narratives": "Narrative Analysis",
+      "whatif": "What-If Simulation",
+      "fraud": "Fraud Detection",
+      "performance": "Engine Performance"
+    }
+  }
+}

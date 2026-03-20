@@ -1,0 +1,25 @@
+{
+  "title": "Counterparties",
+  "addCounterparty": "Add Counterparty",
+  "editCounterparty": "Edit Counterparty",
+  "profile": "Counterparty Profile",
+  "fields": {
+    "name": "Name",
+    "shortName": "Short name",
+    "type": "Type",
+    "taxId": "Tax ID",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "paymentTerms": "Payment terms",
+    "scoring": "Scoring",
+    "isActive": "Active"
+  },
+  "types": {
+    "customer": "Customer",
+    "supplier": "Supplier",
+    "employee": "Employee",
+    "government": "Government",
+    "other": "Other"
+  }
+}
