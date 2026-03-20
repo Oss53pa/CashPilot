@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import type { DebtContract, DebtContractFormData, DebtSummary, RepaymentScheduleItem } from '../types';
+import type { DebtContract, DebtContractFormData, DebtSummary, RepaymentScheduleItem, FinancingPlan } from '../types';
 
 export const debtService = {
   async list(companyId: string): Promise<DebtContract[]> {
@@ -150,5 +150,64 @@ export const debtService = {
     }
 
     return schedule;
+  },
+
+  async getFinancingPlan(_companyId: string): Promise<FinancingPlan> {
+    // Mock data in FCFA (2026-2028)
+    return {
+      years: [
+        {
+          year: 2026,
+          needs: {
+            capex: 450000000,
+            loan_repayments: 180000000,
+            working_capital: 75000000,
+            total: 705000000,
+          },
+          resources: {
+            operating_cash_flow: 520000000,
+            available_cash: 150000000,
+            maturing_investments: 80000000,
+            credit_lines: 200000000,
+            total: 950000000,
+          },
+          balance: 245000000,
+        },
+        {
+          year: 2027,
+          needs: {
+            capex: 320000000,
+            loan_repayments: 195000000,
+            working_capital: 90000000,
+            total: 605000000,
+          },
+          resources: {
+            operating_cash_flow: 580000000,
+            available_cash: 100000000,
+            maturing_investments: 50000000,
+            credit_lines: 150000000,
+            total: 880000000,
+          },
+          balance: 275000000,
+        },
+        {
+          year: 2028,
+          needs: {
+            capex: 680000000,
+            loan_repayments: 210000000,
+            working_capital: 120000000,
+            total: 1010000000,
+          },
+          resources: {
+            operating_cash_flow: 620000000,
+            available_cash: 80000000,
+            maturing_investments: 30000000,
+            credit_lines: 100000000,
+            total: 830000000,
+          },
+          balance: -180000000,
+        },
+      ],
+    };
   },
 };

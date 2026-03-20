@@ -60,3 +60,19 @@ export function usePortfolioSummary(companyId: string | undefined) {
     enabled: !!companyId,
   });
 }
+
+export function useSurplusDetection(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['investments', 'surplus-detection', companyId],
+    queryFn: () => investmentsService.getSurplusDetection(companyId!),
+    enabled: !!companyId,
+  });
+}
+
+export function usePlacementSuggestions(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['investments', 'placement-suggestions', companyId],
+    queryFn: () => investmentsService.getPlacementSuggestions(companyId!),
+    enabled: !!companyId,
+  });
+}

@@ -27,3 +27,11 @@ export interface PrepaidCard {
   created_at: string;
   updated_at: string;
 }
+
+// --- Gift Card Liability ---
+export interface GiftCardLiability {
+  total_issued: number;
+  total_used: number;
+  total_expired: number;
+  outstanding_liability: number;
+}

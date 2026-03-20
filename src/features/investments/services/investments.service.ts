@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import type { Investment, InvestmentFormData, PortfolioSummary } from '../types';
+import type { Investment, InvestmentFormData, PortfolioSummary, SurplusDetection, PlacementSuggestion } from '../types';
 
 export const investmentsService = {
   async list(companyId: string): Promise<Investment[]> {
@@ -99,5 +99,53 @@ export const investmentsService = {
       maturing_within_30_days: maturingWithin30Days,
       by_type: byType,
     };
+  },
+
+  async getSurplusDetection(_companyId: string): Promise<SurplusDetection[]> {
+    // Mock data in FCFA
+    return [
+      {
+        account: 'Compte Courant SGBCI',
+        current_balance: 285000000,
+        max_threshold: 150000000,
+        excess_amount: 135000000,
+      },
+      {
+        account: 'Compte Courant BIAO',
+        current_balance: 92000000,
+        max_threshold: 80000000,
+        excess_amount: 12000000,
+      },
+    ];
+  },
+
+  async getPlacementSuggestions(_companyId: string): Promise<PlacementSuggestion[]> {
+    // Mock data
+    return [
+      {
+        instrument: 'DAT (Depot a Terme)',
+        rate: 5.25,
+        term: '3 mois',
+        recommended: false,
+      },
+      {
+        instrument: 'DAT (Depot a Terme)',
+        rate: 6.0,
+        term: '6 mois',
+        recommended: true,
+      },
+      {
+        instrument: 'Bon du Tresor',
+        rate: 5.75,
+        term: '12 mois',
+        recommended: false,
+      },
+      {
+        instrument: 'OPCVM Monetaire',
+        rate: 4.5,
+        term: 'Liquide (J+1)',
+        recommended: false,
+      },
+    ];
   },
 };

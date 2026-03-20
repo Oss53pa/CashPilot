@@ -36,3 +36,18 @@ export interface PortfolioSummary {
   maturing_within_30_days: number;
   by_type: { name: string; value: number }[];
 }
+
+// --- Surplus Detection & Suggestions ---
+export interface SurplusDetection {
+  account: string;
+  current_balance: number;
+  max_threshold: number;
+  excess_amount: number;
+}
+
+export interface PlacementSuggestion {
+  instrument: string;
+  rate: number;
+  term: string;
+  recommended: boolean;
+}

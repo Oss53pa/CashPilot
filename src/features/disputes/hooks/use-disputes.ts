@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { disputesService } from '../services/disputes.service';
-import type { DisputeFileFormData } from '../types';
+import type { DisputeFileFormData, ExitScenario } from '../types';
 
 export function useDisputes(companyId: string | undefined) {
   return useQuery({
@@ -57,5 +57,46 @@ export function useDeleteDispute() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['disputes'] });
     },
+  });
+}
+
+// Exit Scenarios
+export function useExitScenarios(disputeId: string | undefined) {
+  return useQuery({
+    queryKey: ['exit-scenarios', disputeId],
+    queryFn: () => disputesService.getExitScenarios(disputeId!),
+    enabled: !!disputeId,
+  });
+}
+
+export function useCreateExitScenario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Omit<ExitScenario, 'id'>) =>
+      disputesService.createExitScenario(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exit-scenarios'] });
+    },
+  });
+}
+
+export function useDeleteExitScenario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => disputesService.deleteExitScenario(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exit-scenarios'] });
+    },
+  });
+}
+
+// Dashboard
+export function useDisputeDashboard(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['dispute-dashboard', companyId],
+    queryFn: () => disputesService.getDisputeDashboard(companyId!),
+    enabled: !!companyId,
   });
 }

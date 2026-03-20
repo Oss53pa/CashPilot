@@ -48,3 +48,26 @@ export interface RepaymentScheduleItem {
   total: number;
   remaining_balance: number;
 }
+
+// --- Financing Plan ---
+export interface FinancingPlanYear {
+  year: number;
+  needs: {
+    capex: number;
+    loan_repayments: number;
+    working_capital: number;
+    total: number;
+  };
+  resources: {
+    operating_cash_flow: number;
+    available_cash: number;
+    maturing_investments: number;
+    credit_lines: number;
+    total: number;
+  };
+  balance: number;
+}
+
+export interface FinancingPlan {
+  years: FinancingPlanYear[];
+}

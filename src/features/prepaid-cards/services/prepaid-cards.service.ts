@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import type { PrepaidCard, PrepaidCardFormData } from '../types';
+import type { PrepaidCard, PrepaidCardFormData, GiftCardLiability } from '../types';
 
 export const prepaidCardsService = {
   async list(companyId: string): Promise<PrepaidCard[]> {
@@ -57,5 +57,20 @@ export const prepaidCardsService = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  async getGiftCardLiability(_companyId: string): Promise<GiftCardLiability> {
+    // Mock data in FCFA
+    const total_issued = 45000000;
+    const total_used = 28500000;
+    const total_expired = 3200000;
+    const outstanding_liability = total_issued - total_used - total_expired;
+
+    return {
+      total_issued,
+      total_used,
+      total_expired,
+      outstanding_liability,
+    };
   },
 };

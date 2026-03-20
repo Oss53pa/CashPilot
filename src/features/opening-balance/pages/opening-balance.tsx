@@ -15,6 +15,8 @@ import {
   useOpeningBalances,
   useBankAccountsForBalance,
   useSaveOpeningBalances,
+  usePriorReceivables,
+  usePriorPayables,
 } from '../hooks/use-opening-balance';
 import { OpeningBalanceWizard } from '../components/opening-balance-wizard';
 
@@ -27,6 +29,8 @@ export default function OpeningBalancePage() {
     useOpeningBalances(companyId);
   const { data: bankAccounts = [], isLoading: accountsLoading } =
     useBankAccountsForBalance(companyId);
+  const { data: priorReceivables = [] } = usePriorReceivables(companyId);
+  const { data: priorPayables = [] } = usePriorPayables(companyId);
   const saveBalances = useSaveOpeningBalances(companyId);
 
   const isLoading = balancesLoading || accountsLoading;
@@ -96,6 +100,8 @@ export default function OpeningBalancePage() {
         </h2>
         <OpeningBalanceWizard
           bankAccounts={bankAccounts}
+          initialReceivables={priorReceivables}
+          initialPayables={priorPayables}
           onSubmit={({ fiscalYear, entries }) =>
             saveBalances.mutate({ fiscalYear, entries })
           }

@@ -28,6 +28,35 @@ export interface ConsolidatedBalance {
   account_count: number;
 }
 
+export interface ConsolidationConfig {
+  included_companies: { id: string; name: string; included: boolean }[];
+  consolidation_currency: string;
+  elimination_method: 'full' | 'proportional';
+  intercompany_pairs: { from_company_id: string; from_company_name: string; to_company_id: string; to_company_name: string }[];
+}
+
+export interface EliminatedFlow {
+  id: string;
+  from_company: string;
+  to_company: string;
+  amount: number;
+  nature: string;
+  elimination_status: 'eliminated' | 'pending' | 'partial';
+}
+
+export interface ConsolidatedReport {
+  period: string;
+  currency: string;
+  revenue: number;
+  cost_of_sales: number;
+  gross_margin: number;
+  operating_expenses: number;
+  operating_income: number;
+  financial_result: number;
+  net_income: number;
+  eliminations_total: number;
+}
+
 export const consolidationService = {
   async getGroupView(tenantId: string): Promise<GroupSummary> {
     try {
@@ -118,6 +147,57 @@ export const consolidationService = {
     } catch {
       return [];
     }
+  },
+
+  // Consolidation Config (mock data)
+  async getConsolidationConfig(_tenantId: string): Promise<ConsolidationConfig> {
+    return {
+      included_companies: [
+        { id: 'c-1', name: 'CashPilot CI', included: true },
+        { id: 'c-2', name: 'CashPilot SN', included: true },
+        { id: 'c-3', name: 'CashPilot CM', included: true },
+        { id: 'c-4', name: 'CashPilot BF', included: false },
+      ],
+      consolidation_currency: 'XOF',
+      elimination_method: 'full',
+      intercompany_pairs: [
+        { from_company_id: 'c-1', from_company_name: 'CashPilot CI', to_company_id: 'c-2', to_company_name: 'CashPilot SN' },
+        { from_company_id: 'c-1', from_company_name: 'CashPilot CI', to_company_id: 'c-3', to_company_name: 'CashPilot CM' },
+        { from_company_id: 'c-2', from_company_name: 'CashPilot SN', to_company_id: 'c-3', to_company_name: 'CashPilot CM' },
+      ],
+    };
+  },
+
+  async updateConsolidationConfig(_data: Partial<ConsolidationConfig>): Promise<ConsolidationConfig> {
+    // mock update - returns same config
+    return this.getConsolidationConfig('');
+  },
+
+  // Eliminated Flows (mock data)
+  async getEliminatedFlows(_tenantId: string): Promise<EliminatedFlow[]> {
+    return [
+      { id: 'ef-1', from_company: 'CashPilot CI', to_company: 'CashPilot SN', amount: 12_500_000, nature: 'Prestation de services', elimination_status: 'eliminated' },
+      { id: 'ef-2', from_company: 'CashPilot CI', to_company: 'CashPilot CM', amount: 8_750_000, nature: 'Vente de marchandises', elimination_status: 'eliminated' },
+      { id: 'ef-3', from_company: 'CashPilot SN', to_company: 'CashPilot CI', amount: 5_200_000, nature: 'Frais de gestion', elimination_status: 'eliminated' },
+      { id: 'ef-4', from_company: 'CashPilot CM', to_company: 'CashPilot SN', amount: 3_100_000, nature: 'Pret intragroupe', elimination_status: 'pending' },
+      { id: 'ef-5', from_company: 'CashPilot SN', to_company: 'CashPilot CM', amount: 3_100_000, nature: 'Pret intragroupe', elimination_status: 'pending' },
+    ];
+  },
+
+  // Consolidated Report (mock data)
+  async getConsolidatedReport(_tenantId: string, _period: string): Promise<ConsolidatedReport> {
+    return {
+      period: '2026-Q1',
+      currency: 'XOF',
+      revenue: 245_000_000,
+      cost_of_sales: -142_000_000,
+      gross_margin: 103_000_000,
+      operating_expenses: -65_000_000,
+      operating_income: 38_000_000,
+      financial_result: -4_500_000,
+      net_income: 33_500_000,
+      eliminations_total: 29_550_000,
+    };
   },
 
   async getConsolidatedBalance(tenantId: string): Promise<ConsolidatedBalance[]> {

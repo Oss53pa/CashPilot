@@ -9,6 +9,7 @@ import { CurrencyDisplay } from '@/components/shared/currency-display';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { useCompanyStore } from '@/stores/company.store';
 import {
@@ -21,6 +22,7 @@ import {
 import { getDebtColumns } from '../components/debt-columns';
 import { DebtForm } from '../components/debt-form';
 import { RepaymentSchedule } from '../components/repayment-schedule';
+import { FinancingPlan } from '../components/financing-plan';
 import type { DebtContract, DebtContractFormData } from '../types';
 
 export default function DebtPage() {
@@ -39,6 +41,7 @@ export default function DebtPage() {
   const [editingItem, setEditingItem] = useState<DebtContract | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DebtContract | null>(null);
   const [expandedContract, setExpandedContract] = useState<DebtContract | null>(null);
+  const [activeTab, setActiveTab] = useState('contracts');
 
   const columns = useMemo(
     () =>
@@ -161,29 +164,47 @@ export default function DebtPage() {
         ) : null}
       </div>
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={contracts}
-          searchKey="lender"
-          searchPlaceholder={t('debt.searchPlaceholder', 'Search contracts...')}
-        />
-      )}
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="contracts">
+            {t('debt.contractsTab', 'Contracts')}
+          </TabsTrigger>
+          <TabsTrigger value="financing-plan">
+            {t('debt.financingPlanTab', 'Plan de Financement')}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Expanded Repayment Schedule */}
-      {expandedContract && (
-        <RepaymentSchedule
-          contractId={expandedContract.id}
-          currency={expandedContract.currency}
-        />
-      )}
+        <TabsContent value="contracts" className="mt-4 space-y-4">
+          {/* Table */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={contracts}
+              searchKey="lender"
+              searchPlaceholder={t('debt.searchPlaceholder', 'Search contracts...')}
+            />
+          )}
+
+          {/* Expanded Repayment Schedule */}
+          {expandedContract && (
+            <RepaymentSchedule
+              contractId={expandedContract.id}
+              currency={expandedContract.currency}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="financing-plan" className="mt-4">
+          <FinancingPlan />
+        </TabsContent>
+      </Tabs>
 
       {/* Form Dialog */}
       <DebtForm

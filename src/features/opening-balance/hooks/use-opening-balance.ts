@@ -34,3 +34,19 @@ export function useSaveOpeningBalances(companyId: string) {
     },
   });
 }
+
+export function usePriorReceivables(companyId: string) {
+  return useQuery({
+    queryKey: ['prior-receivables', companyId],
+    queryFn: () => openingBalanceService.getPriorReceivables(companyId),
+    enabled: !!companyId,
+  });
+}
+
+export function usePriorPayables(companyId: string) {
+  return useQuery({
+    queryKey: ['prior-payables', companyId],
+    queryFn: () => openingBalanceService.getPriorPayables(companyId),
+    enabled: !!companyId,
+  });
+}

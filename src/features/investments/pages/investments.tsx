@@ -7,6 +7,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { useCompanyStore } from '@/stores/company.store';
 import {
@@ -19,6 +20,7 @@ import {
 import { getInvestmentColumns } from '../components/investment-columns';
 import { InvestmentForm } from '../components/investment-form';
 import { InvestmentDashboard } from '../components/investment-dashboard';
+import { InvestmentSuggestion } from '../components/investment-suggestion';
 import type { Investment, InvestmentFormData } from '../types';
 
 export default function InvestmentsPage() {
@@ -36,6 +38,7 @@ export default function InvestmentsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Investment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Investment | null>(null);
+  const [activeTab, setActiveTab] = useState('portfolio');
 
   const columns = useMemo(
     () =>
@@ -88,21 +91,38 @@ export default function InvestmentsPage() {
       {/* Dashboard Cards */}
       <InvestmentDashboard summary={portfolioSummary} isLoading={summaryLoading} />
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={investments}
-          searchKey="name"
-          searchPlaceholder={t('investments.searchPlaceholder', 'Search investments...')}
-        />
-      )}
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="portfolio">
+            {t('investments.portfolioTab', 'Portfolio')}
+          </TabsTrigger>
+          <TabsTrigger value="suggestions">
+            {t('investments.suggestionsTab', 'Suggestions')}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="portfolio" className="mt-4">
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={investments}
+              searchKey="name"
+              searchPlaceholder={t('investments.searchPlaceholder', 'Search investments...')}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="suggestions" className="mt-4">
+          <InvestmentSuggestion />
+        </TabsContent>
+      </Tabs>
 
       {/* Form Dialog */}
       <InvestmentForm

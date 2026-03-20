@@ -35,10 +35,16 @@ export default function CashRegistersPage() {
   const currentCompany = useCompanyStore((s) => s.currentCompany);
   const companyId = currentCompany?.id;
 
-  const [activeTab, setActiveTab] = useState<'cash' | 'mobile_money'>('cash');
+  const [activeTab, setActiveTab] = useState<string>('cash');
 
   const { data: cashRegisters = [], isLoading: cashLoading } = useCashRegisters(companyId, 'cash');
   const { data: mobileMoneyAccounts = [], isLoading: mobileLoading } = useCashRegisters(companyId, 'mobile_money');
+  const { data: cashCounts = [], isLoading: countsLoading } = useCashCounts(companyId);
+  const { data: withdrawalRequests = [], isLoading: withdrawalsLoading } = useWithdrawalRequests(companyId);
+
+  const createCashCount = useCreateCashCount();
+  const createWithdrawalRequest = useCreateWithdrawalRequest();
+  const approveWithdrawal = useApproveWithdrawalRequest();
 
   const createMutation = useCreateCashRegister();
   const updateMutation = useUpdateCashRegister();
@@ -146,13 +152,19 @@ export default function CashRegistersPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'cash' | 'mobile_money')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)}>
         <TabsList>
           <TabsTrigger value="cash">
             {t('cashRegisters.cashTab', 'Caisse')} ({cashRegisters.length})
           </TabsTrigger>
           <TabsTrigger value="mobile_money">
             {t('cashRegisters.mobileTab', 'Mobile Money')} ({mobileMoneyAccounts.length})
+          </TabsTrigger>
+          <TabsTrigger value="cash_count">
+            Comptage
+          </TabsTrigger>
+          <TabsTrigger value="withdrawals">
+            Retraits
           </TabsTrigger>
         </TabsList>
 
@@ -188,6 +200,35 @@ export default function CashRegistersPage() {
               searchPlaceholder={t('cashRegisters.searchPlaceholder', 'Search accounts...')}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="cash_count">
+          <CashCountPanel
+            counts={cashCounts}
+            isLoading={countsLoading}
+            onSubmitCount={(data) => {
+              if (companyId) {
+                createCashCount.mutate({
+                  companyId,
+                  data: { ...data, count_date: new Date().toISOString().split('T')[0], validated_by: null },
+                });
+              }
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="withdrawals">
+          <WithdrawalValidationPanel
+            requests={withdrawalRequests}
+            isLoading={withdrawalsLoading}
+            onSubmitRequest={(data) => {
+              if (companyId) {
+                createWithdrawalRequest.mutate({ companyId, data });
+              }
+            }}
+            onApprove={(id) => approveWithdrawal.mutate({ id, approvedBy: 'Utilisateur courant', approved: true })}
+            onReject={(id) => approveWithdrawal.mutate({ id, approvedBy: 'Utilisateur courant', approved: false })}
+          />
         </TabsContent>
       </Tabs>
 

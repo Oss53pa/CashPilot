@@ -22,3 +22,29 @@ export const disputeFileSchema = z.object({
 export type DisputeFileFormData = z.infer<typeof disputeFileSchema>;
 
 export type { DisputeFile };
+
+// Exit Scenario
+export interface ExitScenario {
+  id: string;
+  dispute_id: string;
+  label: string;
+  probability_pct: number;
+  expected_amount: number;
+  expected_date: string;
+  description: string;
+}
+
+// Dispute Dashboard
+export interface DisputeDashboard {
+  active_count: number;
+  total_litigated: number;
+  total_provisions: number;
+  expected_net_value: number;
+  upcoming_hearings: {
+    dispute_id: string;
+    reference: string;
+    hearing_date: string;
+    court: string;
+    days_until: number;
+  }[];
+}

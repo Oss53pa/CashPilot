@@ -18,6 +18,7 @@ import {
 } from '../hooks/use-prepaid-cards';
 import { getPrepaidCardColumns } from '../components/prepaid-card-columns';
 import { PrepaidCardForm } from '../components/prepaid-card-form';
+import { GiftCardLiabilityCard } from '../components/gift-card-liability';
 import type { PrepaidCard, PrepaidCardFormData } from '../types';
 
 export default function PrepaidCardsPage() {
@@ -106,7 +107,10 @@ export default function PrepaidCardsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
+        <TabsContent value={activeTab} className="mt-4 space-y-4">
+          {/* Gift Card Liability - shown on gift tab */}
+          {activeTab === 'gift' && <GiftCardLiabilityCard />}
+
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (

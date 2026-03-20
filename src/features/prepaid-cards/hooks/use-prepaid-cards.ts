@@ -52,3 +52,11 @@ export function useDeletePrepaidCard() {
     },
   });
 }
+
+export function useGiftCardLiability(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['prepaid-cards', 'gift-liability', companyId],
+    queryFn: () => prepaidCardsService.getGiftCardLiability(companyId!),
+    enabled: !!companyId,
+  });
+}

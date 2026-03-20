@@ -68,3 +68,11 @@ export function useRepaymentSchedule(contractId: string | undefined) {
     enabled: !!contractId,
   });
 }
+
+export function useFinancingPlan(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['debt-contracts', 'financing-plan', companyId],
+    queryFn: () => debtService.getFinancingPlan(companyId!),
+    enabled: !!companyId,
+  });
+}

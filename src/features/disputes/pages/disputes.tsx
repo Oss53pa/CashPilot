@@ -3,11 +3,23 @@ import { PageHeader } from '@/components/shared/page-header';
 import { DataTable } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CurrencyDisplay } from '@/components/shared/currency-display';
 import { useCompanyStore } from '@/stores/company.store';
-import { useDisputes, useCreateDispute, useUpdateDispute, useDeleteDispute } from '../hooks/use-disputes';
+import {
+  useDisputes,
+  useCreateDispute,
+  useUpdateDispute,
+  useDeleteDispute,
+  useExitScenarios,
+  useCreateExitScenario,
+  useDeleteExitScenario,
+  useDisputeDashboard,
+} from '../hooks/use-disputes';
 import { DisputeForm } from '../components/dispute-form';
 import { getDisputeColumns } from '../components/dispute-columns';
+import { DisputeDashboardPanel } from '../components/dispute-dashboard';
+import { ExitScenariosPanel } from '../components/exit-scenarios';
 import type { DisputeFile } from '@/types/database';
 import type { DisputeFileFormData } from '../types';
 
@@ -17,11 +29,16 @@ export default function DisputesPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingDispute, setEditingDispute] = useState<DisputeFile | null>(null);
+  const [selectedDisputeId, setSelectedDisputeId] = useState<string | undefined>(undefined);
 
   const { data: disputes = [] } = useDisputes(companyId);
   const createDispute = useCreateDispute();
   const updateDispute = useUpdateDispute();
   const deleteDispute = useDeleteDispute();
+  const { data: dashboard, isLoading: dashboardLoading } = useDisputeDashboard(companyId);
+  const { data: exitScenarios = [], isLoading: scenariosLoading } = useExitScenarios(selectedDisputeId);
+  const createExitScenario = useCreateExitScenario();
+  const deleteExitScenario = useDeleteExitScenario();
 
   const openDisputes = disputes.filter((d) => d.status === 'open' || d.status === 'in_progress');
   const totalDisputed = openDisputes.reduce((sum, d) => sum + d.amount_disputed, 0);
@@ -62,57 +79,106 @@ export default function DisputesPage() {
         </Button>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Open Disputes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openDisputes.length}</div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="dashboard">
+        <TabsList>
+          <TabsTrigger value="dashboard">Tableau de Bord</TabsTrigger>
+          <TabsTrigger value="list">Dossiers</TabsTrigger>
+          <TabsTrigger value="scenarios">Scenarios de Sortie</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Amount Disputed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay
-                amount={totalDisputed}
-                currency={currentCompany?.currency}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <TabsContent value="dashboard" className="space-y-6">
+          <DisputeDashboardPanel
+            dashboard={dashboard}
+            disputes={disputes}
+            isLoading={dashboardLoading}
+          />
+        </TabsContent>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Provisions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay
-                amount={totalProvisions}
-                currency={currentCompany?.currency}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="list" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Open Disputes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{openDisputes.length}</div>
+              </CardContent>
+            </Card>
 
-      <DataTable
-        columns={columns}
-        data={disputes}
-        searchKey="reference"
-        searchPlaceholder="Search by reference..."
-      />
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Amount Disputed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  <CurrencyDisplay
+                    amount={totalDisputed}
+                    currency={currentCompany?.currency}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Provisions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  <CurrencyDisplay
+                    amount={totalProvisions}
+                    currency={currentCompany?.currency}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={disputes}
+            searchKey="reference"
+            searchPlaceholder="Search by reference..."
+          />
+        </TabsContent>
+
+        <TabsContent value="scenarios" className="space-y-6">
+          {/* Dispute selector for scenarios */}
+          <Card>
+            <CardContent className="pt-6">
+              <label className="text-sm font-medium">Selectionner un dossier</label>
+              <select
+                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedDisputeId ?? ''}
+                onChange={(e) => setSelectedDisputeId(e.target.value || undefined)}
+              >
+                <option value="">-- Choisir un dossier --</option>
+                {disputes.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.reference} - {d.type} ({d.status})
+                  </option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+
+          {selectedDisputeId && (
+            <ExitScenariosPanel
+              scenarios={exitScenarios}
+              disputeId={selectedDisputeId}
+              isLoading={scenariosLoading}
+              onAdd={(data) => createExitScenario.mutate(data)}
+              onRemove={(id) => deleteExitScenario.mutate(id)}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       <DisputeForm
         open={formOpen}
