@@ -8,17 +8,13 @@ import { DataTable } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
-import {
   useCounterparties,
   useCreateCounterparty,
   useDeleteCounterparty,
 } from '../hooks/use-counterparties';
 import { getCounterpartyColumns } from '../components/counterparty-columns';
 import { CounterpartyForm } from '../components/counterparty-form';
-import { CounterpartyProfile } from '../components/counterparty-profile';
+import { TenantFormFull } from '../components/tenant-form-full';
 import type { CounterpartyInput } from '../types';
 
 export default function CounterpartiesPage() {
@@ -31,7 +27,7 @@ export default function CounterpartiesPage() {
   const deleteCounterparty = useDeleteCounterparty(companyId);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [tenantFormOpen, setTenantFormOpen] = useState(false);
   const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -52,7 +48,7 @@ export default function CounterpartiesPage() {
 
   function handleView(counterparty: Counterparty) {
     setSelectedCounterparty(counterparty);
-    setProfileOpen(true);
+    setTenantFormOpen(true);
   }
 
   const columns = useMemo(
@@ -116,16 +112,13 @@ export default function CounterpartiesPage() {
         isPending={createCounterparty.isPending}
       />
 
-      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-0">
-          {selectedCounterparty && (
-            <CounterpartyProfile
-              counterparty={selectedCounterparty}
-              companyId={companyId}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedCounterparty && (
+        <TenantFormFull
+          open={tenantFormOpen}
+          onOpenChange={setTenantFormOpen}
+          counterparty={selectedCounterparty}
+        />
+      )}
     </div>
   );
 }

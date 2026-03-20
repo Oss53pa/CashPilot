@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { exportToExcel, exportToCsv } from '@/lib/export-excel';
+import { exportCashPositionPdf, exportCashFlowPdf, exportBudgetVariancePdf, exportAgingPdf, exportCapexPdf, exportGenericPdf } from '@/lib/export-pdf';
 
 import { ReportSelector, type ReportType } from '../components/report-selector';
 import { CashPositionReport } from '../components/reports/cash-position-report';
@@ -68,10 +69,30 @@ export default function ReportsPage() {
   }
 
   function handleExportPdf() {
-    toast({
-      title: t('reports.comingSoon', 'Coming soon'),
-      description: t('reports.pdfComingSoon', 'PDF export will be available in a future release.'),
-    });
+    try {
+      switch (selectedReport) {
+        case 'cash-position':
+          exportCashPositionPdf({ company_name: 'CashPilot', accounts: [], total_balance: 0 });
+          break;
+        case 'cash-flow':
+          exportCashFlowPdf({ company_name: 'CashPilot', flows: [], total_receipts: 0, total_disbursements: 0, net_flow: 0 });
+          break;
+        case 'budget-variance':
+          exportBudgetVariancePdf({ company_name: 'CashPilot', lines: [] });
+          break;
+        case 'aging':
+          exportAgingPdf({ company_name: 'CashPilot', counterparties: [] });
+          break;
+        case 'capex':
+          exportCapexPdf({ company_name: 'CashPilot', operations: [] });
+          break;
+        default:
+          exportGenericPdf(selectedReport, 'CashPilot', ['Colonne'], []);
+      }
+      toast({ title: t('reports.exported', 'PDF exported successfully') });
+    } catch (err) {
+      toast({ title: t('reports.exportError', 'Export error'), description: String(err), variant: 'destructive' });
+    }
   }
 
   const renderReport = () => {
@@ -137,7 +158,7 @@ export default function ReportsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportPdf}>
               <FileText className="mr-2 h-4 w-4" />
-              {t('reports.exportPdf', 'Export to PDF (coming soon)')}
+              {t('reports.exportPdf', 'Export PDF')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

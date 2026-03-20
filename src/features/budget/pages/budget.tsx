@@ -12,7 +12,7 @@ import { getBudgetColumns } from '../components/budget-columns';
 import { BudgetForm } from '../components/budget-form';
 import { BudgetImport } from '../components/budget-import';
 import { BudgetComparisonView } from '../components/budget-comparison';
-import type { BudgetCreateInput, BudgetLineInput } from '../types';
+import type { BudgetCreateInput, BudgetHeaderInput, BudgetLineInput } from '../types';
 
 export default function BudgetPage() {
   const { t } = useTranslation('budget');
@@ -27,8 +27,15 @@ export default function BudgetPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
 
-  function handleCreate(data: BudgetCreateInput) {
-    createBudget.mutate(data);
+  function handleCreate(data: BudgetHeaderInput | BudgetCreateInput) {
+    // Convert BudgetHeaderInput to BudgetCreateInput for the legacy API
+    const legacyInput: BudgetCreateInput = {
+      name: data.name,
+      fiscal_year: data.fiscal_year,
+      status: 'status' in data ? (data.status === 'in_review' ? 'submitted' : data.status === 'validated' ? 'approved' : data.status as 'draft' | 'submitted' | 'approved' | 'archived') : 'draft',
+    };
+    createBudget.mutate(legacyInput);
+    setFormOpen(false);
   }
 
   function handleDelete(budget: { id: string }) {
@@ -36,7 +43,6 @@ export default function BudgetPage() {
   }
 
   function handleImport(lines: BudgetLineInput[]) {
-    // In real use, would upsert lines to a selected budget
     console.log('Imported lines:', lines);
   }
 
@@ -60,11 +66,11 @@ export default function BudgetPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('title', 'Budgets')}
-        description={t('description', 'Manage your annual budgets and forecasts.')}
+        description={t('description', 'Gérez vos budgets prévisionnels et suivez leur exécution.')}
       >
         <Button onClick={() => setFormOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('create', 'Create Budget')}
+          {t('create', 'Nouveau budget')}
         </Button>
       </PageHeader>
 
@@ -77,7 +83,7 @@ export default function BudgetPage() {
             {t('tabs.import', 'Import')}
           </TabsTrigger>
           <TabsTrigger value="comparison">
-            {t('tabs.comparison', 'Comparison')}
+            {t('tabs.comparison', 'Comparaison')}
           </TabsTrigger>
         </TabsList>
 
@@ -86,7 +92,7 @@ export default function BudgetPage() {
             columns={columns}
             data={budgets}
             searchKey="name"
-            searchPlaceholder={t('search', 'Search budgets...')}
+            searchPlaceholder={t('search', 'Rechercher un budget...')}
           />
         </TabsContent>
 

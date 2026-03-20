@@ -7,7 +7,256 @@ import type {
   DistributionRule,
   BudgetComparison,
   BudgetComparisonLine,
+  BudgetLine,
+  BudgetApprovalStep,
+  BudgetSimulation,
+  SimulationResult,
+  BudgetCategory,
 } from '../types';
+
+// ─── 23 top-level budget categories for Ivorian commercial real estate ───────
+
+export const BUDGET_CATEGORIES_TREE: {
+  category: BudgetCategory;
+  label: string;
+  children: { code: string; label: string; defaultMonths?: number[] }[];
+}[] = [
+  {
+    category: 'revenue',
+    label: 'REVENUS',
+    children: [
+      { code: 'REV-01', label: 'Loyers bureaux', defaultMonths: [18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000, 18500000] },
+      { code: 'REV-02', label: 'Loyers commerces', defaultMonths: [12000000, 12000000, 12000000, 12000000, 12000000, 14500000, 14500000, 12000000, 12000000, 14500000, 16000000, 18000000] },
+      { code: 'REV-03', label: 'Charges récupérables locataires', defaultMonths: [4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000, 4200000] },
+      { code: 'REV-04', label: 'Parking & stockage', defaultMonths: [2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000, 2800000] },
+      { code: 'REV-05', label: 'Revenus annexes (antennes, affichage)', defaultMonths: [1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000] },
+      { code: 'REV-06', label: 'Indemnités & pénalités reçues', defaultMonths: [0, 0, 500000, 0, 0, 0, 0, 0, 750000, 0, 0, 0] },
+    ],
+  },
+  {
+    category: 'opex',
+    label: "CHARGES D'EXPLOITATION",
+    children: [
+      { code: 'OPX-01', label: 'Salaires & charges sociales', defaultMonths: [8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000, 8500000] },
+      { code: 'OPX-02', label: 'Entretien & maintenance bâtiment', defaultMonths: [3200000, 3200000, 3200000, 3200000, 3200000, 4500000, 3200000, 3200000, 3200000, 3200000, 3200000, 5000000] },
+      { code: 'OPX-03', label: 'Énergie (électricité CIE)', defaultMonths: [4800000, 4800000, 5200000, 5600000, 5600000, 5200000, 4800000, 4800000, 5200000, 5600000, 5200000, 4800000] },
+      { code: 'OPX-04', label: 'Eau (SODECI)', defaultMonths: [850000, 850000, 850000, 950000, 950000, 850000, 850000, 850000, 950000, 950000, 850000, 850000] },
+      { code: 'OPX-05', label: 'Sécurité & gardiennage', defaultMonths: [2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000, 2400000] },
+      { code: 'OPX-06', label: 'Assurances', defaultMonths: [6000000, 0, 0, 0, 0, 0, 6000000, 0, 0, 0, 0, 0] },
+      { code: 'OPX-07', label: 'Taxe foncière & impôts locaux', defaultMonths: [0, 0, 8500000, 0, 0, 0, 0, 0, 8500000, 0, 0, 0] },
+      { code: 'OPX-08', label: 'Honoraires (gestion, juridique, audit)', defaultMonths: [1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 3500000] },
+      { code: 'OPX-09', label: 'Frais de commercialisation', defaultMonths: [750000, 750000, 750000, 750000, 1500000, 750000, 750000, 750000, 1500000, 750000, 750000, 750000] },
+      { code: 'OPX-10', label: 'Fournitures & consommables', defaultMonths: [450000, 450000, 450000, 450000, 450000, 450000, 450000, 450000, 450000, 450000, 450000, 450000] },
+      { code: 'OPX-11', label: 'Télécommunications & IT', defaultMonths: [1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000, 1200000] },
+      { code: 'OPX-12', label: 'Divers exploitation', defaultMonths: [600000, 600000, 600000, 600000, 600000, 600000, 600000, 600000, 600000, 600000, 600000, 600000] },
+    ],
+  },
+  {
+    category: 'financial',
+    label: 'CHARGES FINANCIÈRES',
+    children: [
+      { code: 'FIN-01', label: 'Intérêts emprunts bancaires', defaultMonths: [3200000, 3200000, 3200000, 3200000, 3200000, 3200000, 3150000, 3150000, 3150000, 3150000, 3150000, 3150000] },
+      { code: 'FIN-02', label: 'Frais bancaires & commissions', defaultMonths: [350000, 350000, 350000, 350000, 350000, 350000, 350000, 350000, 350000, 350000, 350000, 350000] },
+      { code: 'FIN-03', label: 'Intérêts leasing', defaultMonths: [1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000, 1800000] },
+    ],
+  },
+  {
+    category: 'capex',
+    label: 'CAPEX',
+    children: [
+      { code: 'CPX-01', label: 'Investissements immobiliers & équipements', defaultMonths: [0, 0, 15000000, 0, 0, 25000000, 0, 0, 0, 10000000, 0, 0] },
+    ],
+  },
+  {
+    category: 'loan_repayment',
+    label: 'REMBOURSEMENTS EMPRUNTS',
+    children: [
+      { code: 'RMB-01', label: 'Remboursement capital emprunts', defaultMonths: [4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000, 4500000] },
+    ],
+  },
+];
+
+// ─── Mock N-1 data (previous year) ──────────────────────────────────────────
+
+const MOCK_N1_DATA: Record<string, number> = {
+  'REV-01': 210000000,
+  'REV-02': 156000000,
+  'REV-03': 48000000,
+  'REV-04': 31200000,
+  'REV-05': 16800000,
+  'REV-06': 2500000,
+  'OPX-01': 96000000,
+  'OPX-02': 42000000,
+  'OPX-03': 58000000,
+  'OPX-04': 10200000,
+  'OPX-05': 27600000,
+  'OPX-06': 11000000,
+  'OPX-07': 16000000,
+  'OPX-08': 23000000,
+  'OPX-09': 10500000,
+  'OPX-10': 5100000,
+  'OPX-11': 13800000,
+  'OPX-12': 6800000,
+  'FIN-01': 39600000,
+  'FIN-02': 4000000,
+  'FIN-03': 21600000,
+  'CPX-01': 45000000,
+  'RMB-01': 52000000,
+};
+
+// ─── Generate mock budget lines ─────────────────────────────────────────────
+
+let lineIdCounter = 1;
+
+function generateMockBudgetLines(budgetId: string): BudgetLine[] {
+  const lines: BudgetLine[] = [];
+
+  for (const group of BUDGET_CATEGORIES_TREE) {
+    const parentId = `line-${lineIdCounter++}`;
+    const parentMonths = Array(12).fill(0);
+
+    const childLines: BudgetLine[] = [];
+
+    for (const child of group.children) {
+      const childId = `line-${lineIdCounter++}`;
+      const months = child.defaultMonths ?? Array(12).fill(0);
+      const annualTotal = months.reduce((s, v) => s + v, 0);
+      const budgetN1 = MOCK_N1_DATA[child.code] ?? 0;
+      const varianceN1 = budgetN1 > 0 ? Math.round(((annualTotal - budgetN1) / budgetN1) * 10000) / 100 : 0;
+
+      months.forEach((v, i) => { parentMonths[i] += v; });
+
+      childLines.push({
+        id: childId,
+        budget_id: budgetId,
+        parent_id: parentId,
+        level: 2,
+        code: child.code,
+        label: child.label,
+        category: group.category,
+        hypothesis: '',
+        budget_n1: budgetN1,
+        variance_n1: varianceN1,
+        annual_total: annualTotal,
+        months,
+        distribution_rule: 'manual',
+        collapsed: false,
+      });
+    }
+
+    const parentTotal = parentMonths.reduce((s, v) => s + v, 0);
+    const parentN1 = childLines.reduce((s, c) => s + (c.budget_n1 ?? 0), 0);
+    const parentVariance = parentN1 > 0 ? Math.round(((parentTotal - parentN1) / parentN1) * 10000) / 100 : 0;
+
+    lines.push({
+      id: parentId,
+      budget_id: budgetId,
+      parent_id: null,
+      level: 1,
+      code: group.category.toUpperCase(),
+      label: group.label,
+      category: group.category,
+      hypothesis: '',
+      budget_n1: parentN1,
+      variance_n1: parentVariance,
+      annual_total: parentTotal,
+      months: parentMonths,
+      distribution_rule: 'manual',
+      collapsed: false,
+      children: childLines,
+    });
+  }
+
+  return lines;
+}
+
+// ─── Mock approval workflow ─────────────────────────────────────────────────
+
+function getMockApprovalSteps(): BudgetApprovalStep[] {
+  return [
+    {
+      step: 1,
+      role: 'Saisie',
+      actor_name: 'Kouamé Adjoua (Trésorier)',
+      status: 'approved',
+      comment: 'Saisie complète, lignes vérifiées',
+      date: '2026-01-15',
+      deadline_days: 5,
+    },
+    {
+      step: 2,
+      role: 'Revue DAF',
+      actor_name: 'N\'Guessan Koffi (DAF)',
+      status: 'approved',
+      comment: 'Hypothèses cohérentes avec le plan stratégique',
+      date: '2026-01-18',
+      deadline_days: 3,
+    },
+    {
+      step: 3,
+      role: 'Validation DGA',
+      actor_name: 'Bamba Moussa (DGA)',
+      status: 'pending',
+      deadline_days: 5,
+    },
+    {
+      step: 4,
+      role: 'Validation DG',
+      actor_name: 'Traoré Ibrahim (DG)',
+      status: 'pending',
+      deadline_days: 3,
+    },
+    {
+      step: 5,
+      role: 'Activation',
+      actor_name: 'Système',
+      status: 'pending',
+      deadline_days: 1,
+    },
+  ];
+}
+
+// ─── Mock companies and users ────────────────────────────────────────────────
+
+export const MOCK_COMPANIES = [
+  { id: 'comp-001', name: 'Abidjan Business Center SARL' },
+  { id: 'comp-002', name: 'Plateau Commercial SA' },
+  { id: 'comp-003', name: 'Cocody Résidences SCI' },
+];
+
+export const MOCK_USERS = [
+  { id: 'user-001', name: 'Kouamé Adjoua' },
+  { id: 'user-002', name: 'N\'Guessan Koffi' },
+  { id: 'user-003', name: 'Bamba Moussa' },
+  { id: 'user-004', name: 'Traoré Ibrahim' },
+  { id: 'user-005', name: 'Diallo Fatou' },
+];
+
+export const MOCK_COST_CENTERS = [
+  'Tour A — Bureaux',
+  'Tour B — Commerces',
+  'Parking sous-sol',
+  'Espaces communs',
+  'Administration',
+];
+
+export const MOCK_BUDGETS_LIST = [
+  { id: 'budget-2025', name: 'Budget 2025 — V2 Validé', fiscal_year: 2025 },
+  { id: 'budget-2024', name: 'Budget 2024 — V3 Final', fiscal_year: 2024 },
+];
+
+export const MOCK_COUNTERPARTIES = [
+  { id: 'cp-001', name: 'CIE (Compagnie Ivoirienne d\'Électricité)' },
+  { id: 'cp-002', name: 'SODECI' },
+  { id: 'cp-003', name: 'Ivoire Sécurité SA' },
+  { id: 'cp-004', name: 'NSIA Assurances' },
+  { id: 'cp-005', name: 'SGBCI' },
+  { id: 'cp-006', name: 'Ecobank CI' },
+  { id: 'cp-007', name: 'Cabinet Diallo & Associés' },
+  { id: 'cp-008', name: 'Groupe Bolloré' },
+];
+
+// ─── Service ─────────────────────────────────────────────────────────────────
 
 export const budgetService = {
   async listBudgets(companyId: string) {
@@ -75,7 +324,6 @@ export const budgetService = {
       ...line,
       budget_id: budgetId,
     }));
-
     const { data, error } = await supabase
       .from('budget_lines')
       .upsert(rows, { onConflict: 'id' })
@@ -138,7 +386,6 @@ export const budgetService = {
   },
 
   async importBudget(_budgetId: string, _importData: BudgetImportData): Promise<BudgetLineInput[]> {
-    // Mock: return sample imported lines
     return [
       {
         category: 'Ventes marchandises',
@@ -159,12 +406,106 @@ export const budgetService = {
     ];
   },
 
+  // ─── New methods ──────────────────────────────────────────────────────────
+
+  getMockBudgetLines(budgetId: string): BudgetLine[] {
+    lineIdCounter = 1;
+    return generateMockBudgetLines(budgetId);
+  },
+
+  getMockApprovalSteps(): BudgetApprovalStep[] {
+    return getMockApprovalSteps();
+  },
+
+  simulateBudget(
+    lines: BudgetLine[],
+    params: BudgetSimulation
+  ): SimulationResult {
+    // Base totals from current lines
+    let baseRevenues = 0;
+    let baseCharges = 0;
+
+    for (const line of lines) {
+      if (line.level !== 1) continue;
+      if (line.category === 'revenue') {
+        baseRevenues = line.annual_total;
+      } else {
+        baseCharges += line.annual_total;
+      }
+    }
+
+    // Apply simulation adjustments
+    const occupancyFactor = params.occupancy_rate / 95; // base assumption 95%
+    const adjustedRevenues = Math.round(baseRevenues * occupancyFactor * (1 + params.avg_rent_variation / 100));
+
+    // Energy lines
+    let energyBase = 0;
+    let otherCharges = 0;
+    for (const line of lines) {
+      if (line.level !== 1) continue;
+      if (line.category === 'revenue') continue;
+      // Sum children to find energy
+      if (line.children) {
+        for (const child of line.children) {
+          if (child.code === 'OPX-03') {
+            energyBase += child.annual_total;
+          }
+        }
+      }
+    }
+    otherCharges = baseCharges - energyBase;
+    const adjustedEnergy = Math.round(energyBase * (1 + params.energy_variation / 100));
+
+    // Headcount impact on salaries (rough: 8.5M/person/month)
+    const salaryDelta = (params.headcount - 12) * 8500000; // base 12 employees
+    const adjustedCharges = otherCharges + adjustedEnergy + salaryDelta;
+
+    const netCashFlow = adjustedRevenues - adjustedCharges;
+
+    // Break-even: month where cumulative net > 0
+    const monthlyNet = adjustedRevenues / 12 - adjustedCharges / 12;
+    let breakEvenMonth: number | null = null;
+    if (monthlyNet > 0) {
+      breakEvenMonth = 1;
+    } else if (netCashFlow > 0) {
+      // Progressive break-even
+      let cumulative = 0;
+      for (let m = 1; m <= 12; m++) {
+        // Revenues grow slightly each month
+        const monthRev = (adjustedRevenues / 12) * (1 + (m - 1) * 0.005);
+        const monthExp = adjustedCharges / 12;
+        cumulative += monthRev - monthExp;
+        if (cumulative > 0) {
+          breakEvenMonth = m;
+          break;
+        }
+      }
+    }
+
+    return {
+      total_revenues: adjustedRevenues,
+      total_charges: adjustedCharges,
+      net_cash_flow: netCashFlow,
+      break_even_month: breakEvenMonth,
+    };
+  },
+
+  async submitForApproval(_budgetId: string): Promise<{ success: boolean; message: string }> {
+    // Mock: simulate API call
+    return {
+      success: true,
+      message: 'Budget soumis pour approbation. Le DAF sera notifié.',
+    };
+  },
+
+  // ─── Distribution helpers ─────────────────────────────────────────────────
+
   getDistributionRules(): DistributionRule[] {
     return [
       { type: 'equal' },
       {
         type: 'weighted',
-        weights: [7, 7, 8, 8, 9, 9, 7, 6, 9, 10, 10, 10], // seasonal with Dec peak
+        weights: [7, 7, 8, 8, 9, 9, 7, 6, 9, 10, 10, 10],
       },
       { type: 'progressive' },
       { type: 'custom', weights: [8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9] },

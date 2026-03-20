@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { budgetService } from '../services/budget.service';
-import type { BudgetCreateInput, BudgetUpdateInput, BudgetLineInput, BudgetImportData } from '../types';
+import type {
+  BudgetCreateInput,
+  BudgetUpdateInput,
+  BudgetLineInput,
+  BudgetImportData,
+  BudgetHeaderInput,
+  BudgetSimulation,
+} from '../types';
 
 export function useBudgets(companyId: string) {
   return useQuery({
@@ -91,4 +98,32 @@ export function useImportBudget(budgetId: string) {
       queryClient.invalidateQueries({ queryKey: ['budgets', 'detail', budgetId] });
     },
   });
+}
+
+// ─── New hooks for comprehensive budget form ─────────────────────────────────
+
+export function useSubmitBudgetForApproval() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (budgetId: string) => budgetService.submitForApproval(budgetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    },
+  });
+}
+
+export function useSimulateBudget() {
+  // This is a local computation, no API call needed
+  // But we provide a hook for consistency with the pattern
+  return {
+    simulate: budgetService.simulateBudget,
+  };
+}
+
+export function useBudgetMockData() {
+  return {
+    getMockLines: budgetService.getMockBudgetLines,
+    getMockApprovalSteps: budgetService.getMockApprovalSteps,
+  };
 }

@@ -5,6 +5,7 @@ import type {
   CounterpartyUpdateInput,
   PaymentProfileOverrides,
   LeaseContractInput,
+  TenantFullProfile,
 } from '../types';
 
 export function useCounterparties(companyId: string) {
@@ -162,6 +163,28 @@ export function useUpdateCounterpartyCertainty() {
     }) => counterpartiesService.updateCounterpartyCertainty(counterpartyId, certaintyClass, forecastPct),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['counterparty-certainties'] });
+    },
+  });
+}
+
+// --- Tenant Full Profile (10 tabs) ---
+
+export function useTenantFullProfile(counterpartyId: string, counterpartyName?: string) {
+  return useQuery({
+    queryKey: ['tenant-full-profile', counterpartyId],
+    queryFn: () => counterpartiesService.getTenantFullProfile(counterpartyId, counterpartyName),
+    enabled: !!counterpartyId,
+  });
+}
+
+export function useSaveTenantFullProfile(counterpartyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (profile: Partial<TenantFullProfile>) =>
+      counterpartiesService.saveTenantFullProfile(counterpartyId, profile),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-full-profile', counterpartyId] });
     },
   });
 }
