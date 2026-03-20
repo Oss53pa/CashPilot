@@ -69,6 +69,9 @@ const Proph3tWhatIfPage = lazy(() => import('@/features/proph3t/pages/what-if'))
 const Proph3tFraudPage = lazy(() => import('@/features/proph3t/pages/fraud'));
 const Proph3tPerformancePage = lazy(() => import('@/features/proph3t/pages/performance'));
 
+// Guide
+const GuidePage = lazy(() => import('@/features/guide/pages/guide'));
+
 // Admin
 const ReportsPage = lazy(() => import('@/features/reporting/pages/reports'));
 const AuditTrailPage = lazy(() => import('@/features/audit-trail/pages/audit-trail'));
@@ -136,6 +139,8 @@ export const router = createBrowserRouter([
       { path: 'consolidation', element: <SuspenseWrapper><ConsolidationPage /></SuspenseWrapper> },
       { path: 'opening-balance', element: <SuspenseWrapper><OpeningBalancePage /></SuspenseWrapper> },
       { path: 'prepaid-cards', element: <SuspenseWrapper><PrepaidCardsPage /></SuspenseWrapper> },
+      // Guide
+      { path: 'guide', element: <SuspenseWrapper><GuidePage /></SuspenseWrapper> },
     ],
   },
   {

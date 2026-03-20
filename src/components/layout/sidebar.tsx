@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   ClipboardList,
   Settings,
+  HelpCircle,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -60,6 +61,7 @@ const iconMap: Record<string, LucideIcon> = {
   ShieldCheck,
   ClipboardList,
   Settings,
+  HelpCircle,
 };
 
 // ---------------------------------------------------------------------------
@@ -134,6 +136,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Rapports', icon: 'ClipboardList', path: '/reports' },
       { labelKey: 'Audit Trail', icon: 'FileText', path: '/audit-trail' },
       { labelKey: 'Parametres', icon: 'Settings', path: '/settings' },
+      { labelKey: 'Guide d\'utilisation', icon: 'HelpCircle', path: '/guide' },
     ],
   },
 ];
