@@ -38,6 +38,8 @@ const FORMAT_LABELS: Record<ImportFormat, string> = {
   camt053: 'CAMT.053 (ISO 20022)',
   csv: 'CSV',
   excel: 'Excel (.xlsx)',
+  pdf: 'PDF (releve scanne)',
+  image: 'Image / Photo (JPG, PNG)',
 };
 
 const FORMAT_ACCEPT: Record<ImportFormat, string> = {
@@ -45,6 +47,8 @@ const FORMAT_ACCEPT: Record<ImportFormat, string> = {
   camt053: '.xml',
   csv: '.csv',
   excel: '.xlsx,.xls',
+  pdf: '.pdf',
+  image: '.jpg,.jpeg,.png,.tiff,.bmp,.webp',
 };
 
 const FORMAT_DESCRIPTIONS: Record<ImportFormat, string> = {
@@ -52,6 +56,8 @@ const FORMAT_DESCRIPTIONS: Record<ImportFormat, string> = {
   camt053: 'Format ISO 20022 XML — utilise par les banques internationales. Importez le fichier .xml du releve de compte.',
   csv: 'Format texte avec separateur — exportez votre releve depuis le portail bancaire au format CSV. Configurez le mapping des colonnes ci-dessous.',
   excel: 'Copiez votre releve dans le template CashPilot ou importez directement un export Excel de votre banque. Configurez le mapping des colonnes ci-dessous.',
+  pdf: 'Releve bancaire au format PDF — CashPilot extrait le texte automatiquement. Pour les PDF scannes (images), un OCR est applique. Precision variable selon la qualite du document.',
+  image: 'Photo ou scan d\'un releve bancaire (JPG, PNG). CashPilot utilise l\'OCR pour extraire les transactions. Assurez-vous que l\'image est nette et lisible.',
 };
 
 // CSV/Excel column mapping fields
@@ -107,8 +113,16 @@ export function BankImport({
       else if (ext === 'xlsx' || ext === 'xls') setSelectedFormat('excel');
       else if (ext === 'xml') setSelectedFormat('camt053');
       else if (ext === 'sta' || ext === 'mt940') setSelectedFormat('mt940');
+      else if (ext === 'pdf') setSelectedFormat('pdf');
+      else if (['jpg', 'jpeg', 'png', 'tiff', 'bmp', 'webp'].includes(ext || '')) setSelectedFormat('image');
 
-      const detectedFormat = ext === 'csv' ? 'csv' : ext === 'xlsx' || ext === 'xls' ? 'excel' : selectedFormat;
+      const detectedFormat = (() => {
+        if (ext === 'csv') return 'csv';
+        if (ext === 'xlsx' || ext === 'xls') return 'excel';
+        if (ext === 'pdf') return 'pdf';
+        if (['jpg', 'jpeg', 'png', 'tiff', 'bmp', 'webp'].includes(ext || '')) return 'image';
+        return selectedFormat;
+      })() as ImportFormat;
 
       // If CSV/Excel → go to mapping step, else go to preview
       if (needsMapping(detectedFormat)) {
@@ -222,12 +236,14 @@ export function BankImport({
 
             {/* Supported formats info */}
             <div className="text-xs text-muted-foreground space-y-1">
-              <p className="font-medium">Formats supportes :</p>
+              <p className="font-medium">Tous les formats supportes :</p>
               <div className="grid grid-cols-2 gap-1">
                 <span>MT940 (.sta, .mt940, .txt) — SGBCI, ECOBANK, UBA, BNI</span>
                 <span>CAMT.053 (.xml) — Banques internationales</span>
                 <span>CSV (.csv) — Toutes banques (mapping configurable)</span>
                 <span>Excel (.xlsx, .xls) — Export banque ou template CashPilot</span>
+                <span>PDF (.pdf) — Releves PDF texte ou scannes (OCR)</span>
+                <span>Image (.jpg, .png) — Photo de releve (OCR)</span>
               </div>
             </div>
           </div>

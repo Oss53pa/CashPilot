@@ -19,7 +19,7 @@ export type { BankAccount };
 
 // --- Bank Statement Import ---
 
-export type ImportFormat = 'mt940' | 'camt053' | 'csv' | 'excel';
+export type ImportFormat = 'mt940' | 'camt053' | 'csv' | 'excel' | 'pdf' | 'image';
 
 export type StatementStatus = 'processing' | 'completed' | 'partial';
 
