@@ -237,49 +237,78 @@ function makeRow(
   };
 }
 
+// Helper: build a parent row from children cells
+function parentFromChildren(code: string, label: string, level: number, parentCode: string | undefined, sign: '+' | '-', children: ForecastRow[], columns: ForecastColumn[]): ForecastRow {
+  const cells: Record<string, ForecastCell> = {};
+  for (const col of columns) {
+    let v = 0;
+    for (const child of children) v += child.cells[col.key]?.forecast ?? 0;
+    cells[col.key] = cell(v);
+  }
+  return { code, label, level, parent_code: parentCode, is_expandable: true, is_total: false, sign, cells, total: computeTotal(cells) };
+}
+
 function generateReceipts(columns: ForecastColumn[]): ForecastRow[] {
   const rows: ForecastRow[] = [];
 
-  // Loyers & Charges locatives (parent)
-  const loyersFixes = makeRow('R-LOY-FIX', 'Loyers fixes', 1, 'R-LOY', false, false, '+', columns, 8_500_000, 34_000_000, 0.05);
-  const charges = makeRow('R-LOY-CHG', 'Charges locatives', 1, 'R-LOY', false, false, '+', columns, 2_200_000, 8_800_000, 0.08);
+  // ── Loyers fixes — par locataire (level 2) ────────────────────
+  const locatairesFixes = [
+    makeRow('R-LOY-FIX-ZARA', 'ZARA CI — Boutique A12', 2, 'R-LOY-FIX', false, false, '+', columns, 2_100_000, 8_400_000, 0.03),
+    makeRow('R-LOY-FIX-CARREF', 'CARREFOUR Market — Ancre RDC', 2, 'R-LOY-FIX', false, false, '+', columns, 1_800_000, 7_200_000, 0.04),
+    makeRow('R-LOY-FIX-MTN', 'MTN Boutique — B07', 2, 'R-LOY-FIX', false, false, '+', columns, 950_000, 3_800_000, 0.05),
+    makeRow('R-LOY-FIX-ORANGE', 'Orange CI — B15', 2, 'R-LOY-FIX', false, false, '+', columns, 1_200_000, 4_800_000, 0.04),
+    makeRow('R-LOY-FIX-BAQ', 'Banque Atlantique — C01', 2, 'R-LOY-FIX', false, false, '+', columns, 850_000, 3_400_000, 0.03),
+    makeRow('R-LOY-FIX-CFAO', 'CFAO Motors — Kiosque K3', 2, 'R-LOY-FIX', false, false, '+', columns, 600_000, 2_400_000, 0.06),
+    makeRow('R-LOY-FIX-TOTAL', 'Total Energies — Station', 2, 'R-LOY-FIX', false, false, '+', columns, 500_000, 2_000_000, 0.03),
+    makeRow('R-LOY-FIX-JUMIA', 'Jumia CI — D02', 2, 'R-LOY-FIX', false, false, '+', columns, 500_000, 2_000_000, 0.08),
+  ];
+  const loyersFixes = parentFromChildren('R-LOY-FIX', 'Loyers fixes', 1, 'R-LOY', '+', locatairesFixes, columns);
+
+  // ── Charges locatives — par locataire (level 2) ───────────────
+  const locatairesCharges = [
+    makeRow('R-LOY-CHG-ZARA', 'ZARA CI', 2, 'R-LOY-CHG', false, false, '+', columns, 380_000, 1_520_000, 0.05),
+    makeRow('R-LOY-CHG-CARREF', 'CARREFOUR Market', 2, 'R-LOY-CHG', false, false, '+', columns, 420_000, 1_680_000, 0.06),
+    makeRow('R-LOY-CHG-MTN', 'MTN Boutique', 2, 'R-LOY-CHG', false, false, '+', columns, 250_000, 1_000_000, 0.07),
+    makeRow('R-LOY-CHG-ORANGE', 'Orange CI', 2, 'R-LOY-CHG', false, false, '+', columns, 300_000, 1_200_000, 0.06),
+    makeRow('R-LOY-CHG-AUTRES', 'Autres locataires (34)', 2, 'R-LOY-CHG', false, false, '+', columns, 850_000, 3_400_000, 0.08),
+  ];
+  const charges = parentFromChildren('R-LOY-CHG', 'Charges locatives', 1, 'R-LOY', '+', locatairesCharges, columns);
+
   const regularisations = makeRow('R-LOY-REG', 'Régularisations', 1, 'R-LOY', false, false, '+', columns, 400_000, 1_600_000, 0.15);
 
-  const loyersCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    const v = (loyersFixes.cells[col.key]?.forecast ?? 0) +
-              (charges.cells[col.key]?.forecast ?? 0) +
-              (regularisations.cells[col.key]?.forecast ?? 0);
-    loyersCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'R-LOY', label: 'Loyers & Charges locatives', level: 0, is_expandable: true, is_total: false, sign: '+', cells: loyersCells, total: computeTotal(loyersCells) });
-  rows.push(loyersFixes, charges, regularisations);
+  const loyersChildren = [loyersFixes, ...locatairesFixes, charges, ...locatairesCharges, regularisations];
+  const loyers = parentFromChildren('R-LOY', 'Loyers & Charges locatives', 0, undefined, '+', [loyersFixes, charges, regularisations], columns);
+  rows.push(loyers, loyersFixes, ...locatairesFixes, charges, ...locatairesCharges, regularisations);
 
-  // Loyers variables
-  rows.push(makeRow('R-LOYVAR', 'Loyers variables', 0, undefined, false, false, '+', columns, 1_800_000, 7_200_000, 0.2));
+  // ── Loyers variables — par locataire ──────────────────────────
+  const loyVarLocataires = [
+    makeRow('R-LOYVAR-CARREF', 'CARREFOUR Market (2.5% CA)', 2, 'R-LOYVAR', false, false, '+', columns, 800_000, 3_200_000, 0.18),
+    makeRow('R-LOYVAR-ZARA', 'ZARA CI (3% CA)', 2, 'R-LOYVAR', false, false, '+', columns, 650_000, 2_600_000, 0.22),
+    makeRow('R-LOYVAR-AUTRES', 'Autres (5 locataires)', 2, 'R-LOYVAR', false, false, '+', columns, 350_000, 1_400_000, 0.2),
+  ];
+  const loyVar = parentFromChildren('R-LOYVAR', 'Loyers variables', 0, undefined, '+', loyVarLocataires, columns);
+  rows.push(loyVar, ...loyVarLocataires);
 
-  // Droits d'entree
+  // Droits d'entrée
   rows.push(makeRow('R-DRE', "Droits d'entrée", 0, undefined, false, false, '+', columns, 500_000, 2_000_000, 0.3));
 
-  // Revenus annexes (parent)
+  // ── Revenus annexes ───────────────────────────────────────────
   const parking = makeRow('R-ANN-PARK', 'Parking', 1, 'R-ANN', false, false, '+', columns, 600_000, 2_400_000, 0.1);
   const affichage = makeRow('R-ANN-AFF', 'Affichage publicitaire', 1, 'R-ANN', false, false, '+', columns, 350_000, 1_400_000, 0.12);
   const evenements = makeRow('R-ANN-EVT', 'Événements', 1, 'R-ANN', false, false, '+', columns, 250_000, 1_000_000, 0.25);
   const kiosques = makeRow('R-ANN-KIO', 'Kiosques', 1, 'R-ANN', false, false, '+', columns, 200_000, 800_000, 0.08);
+  const annexes = parentFromChildren('R-ANN', 'Revenus annexes', 0, undefined, '+', [parking, affichage, evenements, kiosques], columns);
+  rows.push(annexes, parking, affichage, evenements, kiosques);
 
-  const annexesCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    const v = (parking.cells[col.key]?.forecast ?? 0) +
-              (affichage.cells[col.key]?.forecast ?? 0) +
-              (evenements.cells[col.key]?.forecast ?? 0) +
-              (kiosques.cells[col.key]?.forecast ?? 0);
-    annexesCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'R-ANN', label: 'Revenus annexes', level: 0, is_expandable: true, is_total: false, sign: '+', cells: annexesCells, total: computeTotal(annexesCells) });
-  rows.push(parking, affichage, evenements, kiosques);
+  // ── Créances en recouvrement — par débiteur ───────────────────
+  const creanceDebiteurs = [
+    makeRow('R-CREC-MYPLACE', 'MY PLACE SARL — Loyers Fév-Mar', 2, 'R-CREC', false, false, '+', columns, 600_000, 2_400_000, 0.3),
+    makeRow('R-CREC-LOCB', 'Boutique Elegance — Charges Q4', 2, 'R-CREC', false, false, '+', columns, 350_000, 1_400_000, 0.2),
+    makeRow('R-CREC-LOCC', 'Boulangerie Prestige — Loyer Mar', 2, 'R-CREC', false, false, '+', columns, 250_000, 1_000_000, 0.15),
+  ];
+  const creances = parentFromChildren('R-CREC', 'Créances en recouvrement', 0, undefined, '+', creanceDebiteurs, columns);
+  rows.push(creances, ...creanceDebiteurs);
 
-  // Simple rows
-  rows.push(makeRow('R-CREC', 'Créances en recouvrement', 0, undefined, false, false, '+', columns, 1_200_000, 4_800_000, 0.25));
   rows.push(makeRow('R-CONT', 'Recouvrement contentieux', 0, undefined, false, false, '+', columns, 300_000, 1_200_000, 0.35));
   rows.push(makeRow('R-PLAC', 'Placements arrivant à échéance', 0, undefined, false, false, '+', columns, 0, 5_000_000, 0.5));
   rows.push(makeRow('R-LCRED', 'Tirages ligne de crédit', 0, undefined, false, false, '+', columns, 0, 0, 0));
@@ -295,92 +324,182 @@ function generateReceipts(columns: ForecastColumn[]): ForecastRow[] {
 function generateDisbursements(columns: ForecastColumn[]): ForecastRow[] {
   const rows: ForecastRow[] = [];
 
-  // Charges d'exploitation (parent)
-  const personnel = makeRow('D-EXP-PERS', 'Personnel', 1, 'D-EXP', false, false, '-', columns, 3_500_000, 14_000_000, 0.03);
-  const maintenance = makeRow('D-EXP-MAINT', 'Maintenance', 1, 'D-EXP', false, false, '-', columns, 1_200_000, 4_800_000, 0.15);
-  const energie = makeRow('D-EXP-ENRG', 'Énergie', 1, 'D-EXP', false, false, '-', columns, 1_800_000, 7_200_000, 0.12);
-  const securite = makeRow('D-EXP-SEC', 'Sécurité', 1, 'D-EXP', false, false, '-', columns, 800_000, 3_200_000, 0.05);
-  const nettoyage = makeRow('D-EXP-NET', 'Nettoyage', 1, 'D-EXP', false, false, '-', columns, 600_000, 2_400_000, 0.05);
-  const assurances = makeRow('D-EXP-ASS', 'Assurances', 1, 'D-EXP', false, false, '-', columns, 400_000, 1_600_000, 0.02);
-  const honoraires = makeRow('D-EXP-HON', 'Honoraires', 1, 'D-EXP', false, false, '-', columns, 500_000, 2_000_000, 0.2);
-  const marketing = makeRow('D-EXP-MKT', 'Marketing', 1, 'D-EXP', false, false, '-', columns, 700_000, 2_800_000, 0.25);
-  const fraisGen = makeRow('D-EXP-FG', 'Frais généraux', 1, 'D-EXP', false, false, '-', columns, 300_000, 1_200_000, 0.1);
+  // ══════════════════════════════════════════════════════════════
+  // CHARGES D'EXPLOITATION — avec drill-down par fournisseur
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Personnel (level 1 expandable → fournisseurs level 2) ────
+  const persDetails = [
+    makeRow('D-EXP-PERS-SAL', 'Salaires bruts (42 ETP)', 2, 'D-EXP-PERS', false, false, '-', columns, 2_400_000, 9_600_000, 0.02),
+    makeRow('D-EXP-PERS-CNPS', 'Charges CNPS patronales', 2, 'D-EXP-PERS', false, false, '-', columns, 720_000, 2_880_000, 0.02),
+    makeRow('D-EXP-PERS-PRIM', 'Primes et gratifications', 2, 'D-EXP-PERS', false, false, '-', columns, 280_000, 1_120_000, 0.1),
+    makeRow('D-EXP-PERS-AVN', 'Avantages en nature', 2, 'D-EXP-PERS', false, false, '-', columns, 100_000, 400_000, 0.05),
+  ];
+  const personnel = parentFromChildren('D-EXP-PERS', 'Personnel', 1, 'D-EXP', '-', persDetails, columns);
+
+  // ── Maintenance (level 1 → fournisseurs level 2) ─────────────
+  const maintDetails = [
+    makeRow('D-EXP-MAINT-SOGECI', 'SOGECI BTP — Contrat annuel', 2, 'D-EXP-MAINT', false, false, '-', columns, 450_000, 1_800_000, 0.05),
+    makeRow('D-EXP-MAINT-KONE', 'KONE CI — Ascenseurs', 2, 'D-EXP-MAINT', false, false, '-', columns, 280_000, 1_120_000, 0.03),
+    makeRow('D-EXP-MAINT-OTIS', 'OTIS Afrique — Escalators', 2, 'D-EXP-MAINT', false, false, '-', columns, 220_000, 880_000, 0.04),
+    makeRow('D-EXP-MAINT-CURA', 'Maintenance curative (divers)', 2, 'D-EXP-MAINT', false, false, '-', columns, 250_000, 1_000_000, 0.25),
+  ];
+  const maintenance = parentFromChildren('D-EXP-MAINT', 'Maintenance', 1, 'D-EXP', '-', maintDetails, columns);
+
+  // ── Énergie (level 1 → fournisseurs level 2) ─────────────────
+  const energieDetails = [
+    makeRow('D-EXP-ENRG-CIE', 'CIE — Électricité', 2, 'D-EXP-ENRG', false, false, '-', columns, 1_100_000, 4_400_000, 0.1),
+    makeRow('D-EXP-ENRG-SODECI', 'SODECI — Eau', 2, 'D-EXP-ENRG', false, false, '-', columns, 350_000, 1_400_000, 0.08),
+    makeRow('D-EXP-ENRG-CARB', 'TOTAL Energies — Carburant GE', 2, 'D-EXP-ENRG', false, false, '-', columns, 350_000, 1_400_000, 0.15),
+  ];
+  const energie = parentFromChildren('D-EXP-ENRG', 'Énergie', 1, 'D-EXP', '-', energieDetails, columns);
+
+  // ── Sécurité (level 1 → fournisseurs level 2) ────────────────
+  const secuDetails = [
+    makeRow('D-EXP-SEC-GS4', 'G4S Sécurité CI — Gardiennage', 2, 'D-EXP-SEC', false, false, '-', columns, 550_000, 2_200_000, 0.03),
+    makeRow('D-EXP-SEC-VIGI', 'Vigile Plus — Vidéosurveillance', 2, 'D-EXP-SEC', false, false, '-', columns, 250_000, 1_000_000, 0.05),
+  ];
+  const securite = parentFromChildren('D-EXP-SEC', 'Sécurité', 1, 'D-EXP', '-', secuDetails, columns);
+
+  // ── Nettoyage (level 1 → fournisseurs level 2) ───────────────
+  const nettDetails = [
+    makeRow('D-EXP-NET-OZONE', 'Ozone Services — Nettoyage', 2, 'D-EXP-NET', false, false, '-', columns, 380_000, 1_520_000, 0.04),
+    makeRow('D-EXP-NET-HYGCI', 'Hygiène CI — Dératisation', 2, 'D-EXP-NET', false, false, '-', columns, 120_000, 480_000, 0.05),
+    makeRow('D-EXP-NET-DECH', 'SIPRA — Collecte déchets', 2, 'D-EXP-NET', false, false, '-', columns, 100_000, 400_000, 0.03),
+  ];
+  const nettoyage = parentFromChildren('D-EXP-NET', 'Nettoyage', 1, 'D-EXP', '-', nettDetails, columns);
+
+  // ── Assurances (level 1 → fournisseurs level 2) ──────────────
+  const assDetails = [
+    makeRow('D-EXP-ASS-NSIA', 'NSIA Assurances — Multirisque', 2, 'D-EXP-ASS', false, false, '-', columns, 250_000, 1_000_000, 0.02),
+    makeRow('D-EXP-ASS-SAHAM', 'Saham Assurance — RC Pro', 2, 'D-EXP-ASS', false, false, '-', columns, 150_000, 600_000, 0.02),
+  ];
+  const assurances = parentFromChildren('D-EXP-ASS', 'Assurances', 1, 'D-EXP', '-', assDetails, columns);
+
+  // ── Honoraires (level 1 → fournisseurs level 2) ──────────────
+  const honDetails = [
+    makeRow('D-EXP-HON-KPMG', 'KPMG CI — Audit et conseil', 2, 'D-EXP-HON', false, false, '-', columns, 200_000, 800_000, 0.15),
+    makeRow('D-EXP-HON-EDJO', 'Cabinet Edjou & Associés — Juridique', 2, 'D-EXP-HON', false, false, '-', columns, 150_000, 600_000, 0.2),
+    makeRow('D-EXP-HON-FIDAL', 'FIDAL Afrique — Conseil fiscal', 2, 'D-EXP-HON', false, false, '-', columns, 150_000, 600_000, 0.25),
+  ];
+  const honoraires = parentFromChildren('D-EXP-HON', 'Honoraires', 1, 'D-EXP', '-', honDetails, columns);
+
+  // ── Marketing (level 1 → fournisseurs level 2) ───────────────
+  const mktDetails = [
+    makeRow('D-EXP-MKT-VOODOO', 'Voodoo Communication — Digital', 2, 'D-EXP-MKT', false, false, '-', columns, 300_000, 1_200_000, 0.2),
+    makeRow('D-EXP-MKT-EVENTS', 'Events Corp CI — Animations', 2, 'D-EXP-MKT', false, false, '-', columns, 250_000, 1_000_000, 0.3),
+    makeRow('D-EXP-MKT-SIGN', 'SignaPrint — Signalétique', 2, 'D-EXP-MKT', false, false, '-', columns, 150_000, 600_000, 0.15),
+  ];
+  const marketing = parentFromChildren('D-EXP-MKT', 'Marketing', 1, 'D-EXP', '-', mktDetails, columns);
+
+  // ── Frais généraux (level 1 → détail level 2) ────────────────
+  const fgDetails = [
+    makeRow('D-EXP-FG-FOUR', 'Fournitures de bureau', 2, 'D-EXP-FG', false, false, '-', columns, 80_000, 320_000, 0.1),
+    makeRow('D-EXP-FG-ORANGE', 'Orange Business — Télécoms', 2, 'D-EXP-FG', false, false, '-', columns, 120_000, 480_000, 0.05),
+    makeRow('D-EXP-FG-DEPL', 'Frais de déplacement', 2, 'D-EXP-FG', false, false, '-', columns, 50_000, 200_000, 0.15),
+    makeRow('D-EXP-FG-LIC', 'Licences et abonnements', 2, 'D-EXP-FG', false, false, '-', columns, 50_000, 200_000, 0.05),
+  ];
+  const fraisGen = parentFromChildren('D-EXP-FG', 'Frais généraux', 1, 'D-EXP', '-', fgDetails, columns);
+
   const caisse = makeRow('D-EXP-CAI', 'Caisse', 1, 'D-EXP', false, false, '-', columns, 200_000, 800_000, 0.15);
   const mobileMoney = makeRow('D-EXP-MM', 'Mobile Money', 1, 'D-EXP', false, false, '-', columns, 150_000, 600_000, 0.1);
 
-  const expChildren = [personnel, maintenance, energie, securite, nettoyage, assurances, honoraires, marketing, fraisGen, caisse, mobileMoney];
-  const expCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of expChildren) v += child.cells[col.key]?.forecast ?? 0;
-    expCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'D-EXP', label: "Charges d'exploitation", level: 0, is_expandable: true, is_total: false, sign: '-', cells: expCells, total: computeTotal(expCells) });
-  rows.push(...expChildren);
+  // Build all exploitation level-1 parents for the total
+  const expLevel1 = [personnel, maintenance, energie, securite, nettoyage, assurances, honoraires, marketing, fraisGen, caisse, mobileMoney];
+  const expTotal = parentFromChildren('D-EXP', "Charges d'exploitation", 0, undefined, '-', expLevel1, columns);
+  rows.push(expTotal);
+  rows.push(personnel, ...persDetails);
+  rows.push(maintenance, ...maintDetails);
+  rows.push(energie, ...energieDetails);
+  rows.push(securite, ...secuDetails);
+  rows.push(nettoyage, ...nettDetails);
+  rows.push(assurances, ...assDetails);
+  rows.push(honoraires, ...honDetails);
+  rows.push(marketing, ...mktDetails);
+  rows.push(fraisGen, ...fgDetails);
+  rows.push(caisse, mobileMoney);
 
-  // Obligations fiscales (parent)
-  const tva = makeRow('D-FISC-TVA', 'TVA', 1, 'D-FISC', false, false, '-', columns, 1_500_000, 6_000_000, 0.08);
-  const is_ = makeRow('D-FISC-IS', 'IS', 1, 'D-FISC', false, false, '-', columns, 0, 3_500_000, 0.1);
-  const patente = makeRow('D-FISC-PAT', 'Patente', 1, 'D-FISC', false, false, '-', columns, 0, 1_200_000, 0.05);
-  const cnps = makeRow('D-FISC-CNPS', 'CNPS', 1, 'D-FISC', false, false, '-', columns, 800_000, 3_200_000, 0.03);
+  // ══════════════════════════════════════════════════════════════
+  // OBLIGATIONS FISCALES — par administration
+  // ══════════════════════════════════════════════════════════════
+  const tva = makeRow('D-FISC-TVA', 'TVA nette — DGI', 1, 'D-FISC', false, false, '-', columns, 1_500_000, 6_000_000, 0.08);
+  const is_ = makeRow('D-FISC-IS', 'IS / Acomptes — DGI', 1, 'D-FISC', false, false, '-', columns, 0, 3_500_000, 0.1);
+  const patente = makeRow('D-FISC-PAT', 'Patente — Mairie Yopougon', 1, 'D-FISC', false, false, '-', columns, 0, 1_200_000, 0.05);
+  const cnps = makeRow('D-FISC-CNPS', 'CNPS — Charges sociales', 1, 'D-FISC', false, false, '-', columns, 800_000, 3_200_000, 0.03);
+  const fiscLevel1 = [tva, is_, patente, cnps];
+  const fisc = parentFromChildren('D-FISC', 'Obligations fiscales', 0, undefined, '-', fiscLevel1, columns);
+  rows.push(fisc, ...fiscLevel1);
 
-  const fiscChildren = [tva, is_, patente, cnps];
-  const fiscCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of fiscChildren) v += child.cells[col.key]?.forecast ?? 0;
-    fiscCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'D-FISC', label: 'Obligations fiscales', level: 0, is_expandable: true, is_total: false, sign: '-', cells: fiscCells, total: computeTotal(fiscCells) });
-  rows.push(...fiscChildren);
+  // ══════════════════════════════════════════════════════════════
+  // SERVICE DE LA DETTE — par banque / contrat
+  // ══════════════════════════════════════════════════════════════
+  const debtCapDetails = [
+    makeRow('D-DEBT-CAP-SGBCI', 'SGBCI — Prêt immobilier #2024-001', 2, 'D-DEBT-CAP', false, false, '-', columns, 1_200_000, 4_800_000, 0.01),
+    makeRow('D-DEBT-CAP-BIAO', 'BIAO CI — Crédit équipement #2025-003', 2, 'D-DEBT-CAP', false, false, '-', columns, 800_000, 3_200_000, 0.01),
+  ];
+  const capital = parentFromChildren('D-DEBT-CAP', 'Remboursements capital', 1, 'D-DEBT', '-', debtCapDetails, columns);
 
-  // Service de la dette (parent)
-  const capital = makeRow('D-DEBT-CAP', 'Capital', 1, 'D-DEBT', false, false, '-', columns, 2_000_000, 8_000_000, 0.02);
-  const interets = makeRow('D-DEBT-INT', 'Intérêts', 1, 'D-DEBT', false, false, '-', columns, 800_000, 3_200_000, 0.02);
-  const ligneCT = makeRow('D-DEBT-LCT', 'Ligne CT', 1, 'D-DEBT', false, false, '-', columns, 0, 0, 0);
+  const debtIntDetails = [
+    makeRow('D-DEBT-INT-SGBCI', 'SGBCI — Intérêts 7.5%', 2, 'D-DEBT-INT', false, false, '-', columns, 500_000, 2_000_000, 0.01),
+    makeRow('D-DEBT-INT-BIAO', 'BIAO CI — Intérêts 8.2%', 2, 'D-DEBT-INT', false, false, '-', columns, 300_000, 1_200_000, 0.01),
+  ];
+  const interets = parentFromChildren('D-DEBT-INT', 'Intérêts d\'emprunt', 1, 'D-DEBT', '-', debtIntDetails, columns);
 
-  const debtChildren = [capital, interets, ligneCT];
-  const debtCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of debtChildren) v += child.cells[col.key]?.forecast ?? 0;
-    debtCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'D-DEBT', label: 'Service de la dette', level: 0, is_expandable: true, is_total: false, sign: '-', cells: debtCells, total: computeTotal(debtCells) });
-  rows.push(...debtChildren);
+  const ligneCT = makeRow('D-DEBT-LCT', 'Remboursements lignes CT', 1, 'D-DEBT', false, false, '-', columns, 0, 0, 0);
+  const debtLevel1 = [capital, interets, ligneCT];
+  const debt = parentFromChildren('D-DEBT', 'Service de la dette', 0, undefined, '-', debtLevel1, columns);
+  rows.push(debt);
+  rows.push(capital, ...debtCapDetails);
+  rows.push(interets, ...debtIntDetails);
+  rows.push(ligneCT);
 
-  // CAPEX planifie (parent)
-  const capex1 = makeRow('D-CAPEX-1', 'Rénovation Aile Nord', 1, 'D-CAPEX', false, false, '-', columns, 0, 12_000_000, 0.3);
-  const capex2 = makeRow('D-CAPEX-2', 'Extension Parking B', 1, 'D-CAPEX', false, false, '-', columns, 0, 8_000_000, 0.2);
-  const capex3 = makeRow('D-CAPEX-3', 'Système HVAC', 1, 'D-CAPEX', false, false, '-', columns, 0, 5_000_000, 0.15);
+  // ══════════════════════════════════════════════════════════════
+  // CAPEX — par opération et prestataire
+  // ══════════════════════════════════════════════════════════════
+  const capexDetails1 = [
+    makeRow('D-CAPEX-1-SOGECI', 'SOGECI BTP — Situation 2', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 6_000_000, 0.25),
+    makeRow('D-CAPEX-1-ELEC', 'SNEDAI Electricité — Lot électrique', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 3_500_000, 0.2),
+    makeRow('D-CAPEX-1-PLOMB', 'Plomberie Nationale — Lot fluides', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 2_500_000, 0.2),
+  ];
+  const capex1 = parentFromChildren('D-CAPEX-1', 'Rénovation Aile Nord', 1, 'D-CAPEX', '-', capexDetails1, columns);
 
-  const capexChildren = [capex1, capex2, capex3];
-  const capexCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of capexChildren) v += child.cells[col.key]?.forecast ?? 0;
-    capexCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'D-CAPEX', label: 'CAPEX planifié', level: 0, is_expandable: true, is_total: false, sign: '-', cells: capexCells, total: computeTotal(capexCells) });
-  rows.push(...capexChildren);
+  const capexDetails2 = [
+    makeRow('D-CAPEX-2-EGC', 'EGC Construction — Terrassement', 2, 'D-CAPEX-2', false, false, '-', columns, 0, 5_000_000, 0.15),
+    makeRow('D-CAPEX-2-BETON', 'Société Ivoirienne de Béton — Dalles', 2, 'D-CAPEX-2', false, false, '-', columns, 0, 3_000_000, 0.2),
+  ];
+  const capex2 = parentFromChildren('D-CAPEX-2', 'Extension Parking B', 1, 'D-CAPEX', '-', capexDetails2, columns);
 
-  // Placements effectues
+  const capexDetails3 = [
+    makeRow('D-CAPEX-3-CLIM', 'Clim Afrique SARL — Équipements CVC', 2, 'D-CAPEX-3', false, false, '-', columns, 0, 3_500_000, 0.12),
+    makeRow('D-CAPEX-3-GAI', 'Gaines & Conduits CI — Installation', 2, 'D-CAPEX-3', false, false, '-', columns, 0, 1_500_000, 0.15),
+  ];
+  const capex3 = parentFromChildren('D-CAPEX-3', 'Système HVAC', 1, 'D-CAPEX', '-', capexDetails3, columns);
+
+  const capexLevel1 = [capex1, capex2, capex3];
+  const capex = parentFromChildren('D-CAPEX', 'CAPEX planifié', 0, undefined, '-', capexLevel1, columns);
+  rows.push(capex);
+  rows.push(capex1, ...capexDetails1);
+  rows.push(capex2, ...capexDetails2);
+  rows.push(capex3, ...capexDetails3);
+
+  // Placements effectués
   rows.push(makeRow('D-PLAC', 'Placements effectués', 0, undefined, false, false, '-', columns, 0, 3_000_000, 0.5));
 
-  // Restitutions (parent)
-  const depots = makeRow('D-REST-DEP', 'Dépôts de garantie', 1, 'D-REST', false, false, '-', columns, 200_000, 800_000, 0.2);
-  const avoirs = makeRow('D-REST-AVO', 'Avoirs', 1, 'D-REST', false, false, '-', columns, 100_000, 400_000, 0.15);
-  const avancesIC = makeRow('D-REST-AIC', 'Avances inter-co', 1, 'D-REST', false, false, '-', columns, 0, 500_000, 0.3);
-
-  const restChildren = [depots, avoirs, avancesIC];
-  const restCells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of restChildren) v += child.cells[col.key]?.forecast ?? 0;
-    restCells[col.key] = cell(v);
-  }
-  rows.push({ code: 'D-REST', label: 'Restitutions', level: 0, is_expandable: true, is_total: false, sign: '-', cells: restCells, total: computeTotal(restCells) });
-  rows.push(...restChildren);
+  // ══════════════════════════════════════════════════════════════
+  // RESTITUTIONS — par bénéficiaire
+  // ══════════════════════════════════════════════════════════════
+  const restDepDetails = [
+    makeRow('D-REST-DEP-MYPL', 'MY PLACE SARL — Fin bail Juin', 2, 'D-REST-DEP', false, false, '-', columns, 100_000, 400_000, 0.2),
+    makeRow('D-REST-DEP-PHARM', 'Pharmacie du Centre — Fin bail Août', 2, 'D-REST-DEP', false, false, '-', columns, 100_000, 400_000, 0.15),
+  ];
+  const depots = parentFromChildren('D-REST-DEP', 'Dépôts de garantie', 1, 'D-REST', '-', restDepDetails, columns);
+  const avoirs = makeRow('D-REST-AVO', 'Avoirs à rembourser', 1, 'D-REST', false, false, '-', columns, 100_000, 400_000, 0.15);
+  const avancesIC = makeRow('D-REST-AIC', 'Remboursement avance Cosmos Angré', 1, 'D-REST', false, false, '-', columns, 0, 500_000, 0.3);
+  const restLevel1 = [depots, avoirs, avancesIC];
+  const restitutions = parentFromChildren('D-REST', 'Restitutions', 0, undefined, '-', restLevel1, columns);
+  rows.push(restitutions);
+  rows.push(depots, ...restDepDetails);
+  rows.push(avoirs, avancesIC);
 
   // TOTAL
   const totalCells = sumCells(rows, columns as ForecastColumn[]);

@@ -50,11 +50,22 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
     });
   }
 
-  // Determine visible rows based on expanded state
+  // Determine visible rows based on expanded state (supports 3 levels: 0→1→2)
   const visibleRows = rows.filter((row) => {
     if (row.level === 0) return true;
-    // Show child rows only if parent is expanded
-    return row.parent_code ? expanded.has(row.parent_code) : true;
+    if (row.level === 1) {
+      // Show level-1 if its parent (level 0) is expanded
+      return row.parent_code ? expanded.has(row.parent_code) : true;
+    }
+    if (row.level === 2) {
+      // Show level-2 if its parent (level 1) is expanded AND grandparent (level 0) is expanded
+      if (!row.parent_code) return false;
+      const parent = rows.find((r) => r.code === row.parent_code);
+      if (!parent) return false;
+      const grandparentExpanded = parent.parent_code ? expanded.has(parent.parent_code) : true;
+      return expanded.has(row.parent_code) && grandparentExpanded;
+    }
+    return false;
   });
 
   return (
