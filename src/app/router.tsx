@@ -37,6 +37,7 @@ const ReceiptsPage = lazy(() => import('@/features/cashflow/pages/receipts'));
 const DisbursementsPage = lazy(() => import('@/features/cashflow/pages/disbursements'));
 const ForecastPage = lazy(() => import('@/features/forecast/pages/forecast'));
 const AnnualForecastPage = lazy(() => import('@/features/forecast/pages/annual-forecast'));
+const RollingForecastPage = lazy(() => import('@/features/rolling-forecast/pages/rolling-forecast'));
 
 // Accounts
 const BankAccountsPage = lazy(() => import('@/features/bank-accounts/pages/bank-accounts'));
@@ -46,6 +47,7 @@ const CashRegistersPage = lazy(() => import('@/features/cash-registers/pages/cas
 // Management
 const BudgetPage = lazy(() => import('@/features/budget/pages/budget'));
 const CounterpartiesPage = lazy(() => import('@/features/counterparties/pages/counterparties'));
+const TenantLifecyclePage = lazy(() => import('@/features/counterparties/pages/tenant-lifecycle'));
 const TransfersPage = lazy(() => import('@/features/internal-transfers/pages/transfers'));
 
 // Financing
@@ -112,6 +114,7 @@ export const router = createBrowserRouter([
       { path: 'forecast', element: <SuspenseWrapper><ForecastPage /></SuspenseWrapper> },
       { path: 'forecast/annual', element: <SuspenseWrapper><AnnualForecastPage /></SuspenseWrapper> },
       { path: 'tft', element: <SuspenseWrapper><TFTPage /></SuspenseWrapper> },
+      { path: 'rolling-forecast', element: <SuspenseWrapper><RollingForecastPage /></SuspenseWrapper> },
       // Accounts
       { path: 'accounts', element: <SuspenseWrapper><BankAccountsPage /></SuspenseWrapper> },
       { path: 'accounts/:id', element: <SuspenseWrapper><BankAccountDetailPage /></SuspenseWrapper> },
@@ -119,6 +122,7 @@ export const router = createBrowserRouter([
       // Management
       { path: 'budget', element: <SuspenseWrapper><BudgetPage /></SuspenseWrapper> },
       { path: 'counterparties', element: <SuspenseWrapper><CounterpartiesPage /></SuspenseWrapper> },
+      { path: 'tenant-lifecycle', element: <SuspenseWrapper><TenantLifecyclePage /></SuspenseWrapper> },
       { path: 'transfers', element: <SuspenseWrapper><TransfersPage /></SuspenseWrapper> },
       // Financing
       { path: 'capex', element: <SuspenseWrapper><CapexPage /></SuspenseWrapper> },

@@ -26,6 +26,7 @@ import {
   type LucideIcon,
   BarChart3,
   FileSpreadsheet,
+  CalendarRange,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app.store';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -66,6 +67,7 @@ const iconMap: Record<string, LucideIcon> = {
   HelpCircle,
   BarChart3,
   FileSpreadsheet,
+  CalendarRange,
 };
 
 // ---------------------------------------------------------------------------
@@ -97,6 +99,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Previsions', icon: 'TrendingUp', path: '/forecast' },
       { labelKey: 'Tableau annuel', icon: 'BarChart3', path: '/forecast/annual' },
       { labelKey: 'TFT', icon: 'FileSpreadsheet', path: '/tft' },
+      { labelKey: 'Prévisions 12 mois', icon: 'CalendarRange', path: '/rolling-forecast' },
     ],
   },
   {
@@ -111,6 +114,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
     items: [
       { labelKey: 'Budget', icon: 'Calculator', path: '/budget' },
       { labelKey: 'Contreparties', icon: 'Users', path: '/counterparties' },
+      { labelKey: 'Cycle de vie locataires', icon: 'Users', path: '/tenant-lifecycle' },
       { labelKey: 'Transferts internes', icon: 'ArrowLeftRight', path: '/transfers' },
     ],
   },
