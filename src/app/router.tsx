@@ -70,6 +70,9 @@ const Proph3tWhatIfPage = lazy(() => import('@/features/proph3t/pages/what-if'))
 const Proph3tFraudPage = lazy(() => import('@/features/proph3t/pages/fraud'));
 const Proph3tPerformancePage = lazy(() => import('@/features/proph3t/pages/performance'));
 
+// TFT (Tableau de Flux de Tresorerie)
+const TFTPage = lazy(() => import('@/features/tft/pages/tft'));
+
 // Guide
 const GuidePage = lazy(() => import('@/features/guide/pages/guide'));
 
@@ -77,6 +80,7 @@ const GuidePage = lazy(() => import('@/features/guide/pages/guide'));
 const ReportsPage = lazy(() => import('@/features/reporting/pages/reports'));
 const AuditTrailPage = lazy(() => import('@/features/audit-trail/pages/audit-trail'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/settings'));
+const PaymentDelaysPage = lazy(() => import('@/features/settings/pages/payment-delays'));
 const ScenariosPage = lazy(() => import('@/features/scenarios/pages/scenarios'));
 const ConsolidationPage = lazy(() => import('@/features/consolidation/pages/consolidation'));
 const OpeningBalancePage = lazy(() => import('@/features/opening-balance/pages/opening-balance'));
@@ -107,6 +111,7 @@ export const router = createBrowserRouter([
       { path: 'disbursements', element: <SuspenseWrapper><DisbursementsPage /></SuspenseWrapper> },
       { path: 'forecast', element: <SuspenseWrapper><ForecastPage /></SuspenseWrapper> },
       { path: 'forecast/annual', element: <SuspenseWrapper><AnnualForecastPage /></SuspenseWrapper> },
+      { path: 'tft', element: <SuspenseWrapper><TFTPage /></SuspenseWrapper> },
       // Accounts
       { path: 'accounts', element: <SuspenseWrapper><BankAccountsPage /></SuspenseWrapper> },
       { path: 'accounts/:id', element: <SuspenseWrapper><BankAccountDetailPage /></SuspenseWrapper> },
@@ -137,6 +142,7 @@ export const router = createBrowserRouter([
       { path: 'reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
       { path: 'audit-trail', element: <SuspenseWrapper><AuditTrailPage /></SuspenseWrapper> },
       { path: 'settings', element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper> },
+      { path: 'settings/payment-delays', element: <SuspenseWrapper><PaymentDelaysPage /></SuspenseWrapper> },
       { path: 'scenarios', element: <SuspenseWrapper><ScenariosPage /></SuspenseWrapper> },
       { path: 'consolidation', element: <SuspenseWrapper><ConsolidationPage /></SuspenseWrapper> },
       { path: 'opening-balance', element: <SuspenseWrapper><OpeningBalancePage /></SuspenseWrapper> },

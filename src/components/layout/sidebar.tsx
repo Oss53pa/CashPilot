@@ -25,6 +25,7 @@ import {
   X,
   type LucideIcon,
   BarChart3,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app.store';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -64,6 +65,7 @@ const iconMap: Record<string, LucideIcon> = {
   Settings,
   HelpCircle,
   BarChart3,
+  FileSpreadsheet,
 };
 
 // ---------------------------------------------------------------------------
@@ -94,6 +96,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Decaissements', icon: 'ArrowUpFromLine', path: '/disbursements' },
       { labelKey: 'Previsions', icon: 'TrendingUp', path: '/forecast' },
       { labelKey: 'Tableau annuel', icon: 'BarChart3', path: '/forecast/annual' },
+      { labelKey: 'TFT', icon: 'FileSpreadsheet', path: '/tft' },
     ],
   },
   {
@@ -139,6 +142,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Rapports', icon: 'ClipboardList', path: '/reports' },
       { labelKey: 'Audit Trail', icon: 'FileText', path: '/audit-trail' },
       { labelKey: 'Parametres', icon: 'Settings', path: '/settings' },
+      { labelKey: 'Delais paiement', icon: 'ClipboardList', path: '/settings/payment-delays' },
       { labelKey: 'Guide d\'utilisation', icon: 'HelpCircle', path: '/guide' },
     ],
   },
