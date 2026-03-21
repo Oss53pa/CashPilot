@@ -146,7 +146,6 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Rapports', icon: 'ClipboardList', path: '/reports' },
       { labelKey: 'Audit Trail', icon: 'FileText', path: '/audit-trail' },
       { labelKey: 'Parametres', icon: 'Settings', path: '/settings' },
-      { labelKey: 'Delais paiement', icon: 'ClipboardList', path: '/settings/payment-delays' },
       { labelKey: 'Guide d\'utilisation', icon: 'HelpCircle', path: '/guide' },
     ],
   },
