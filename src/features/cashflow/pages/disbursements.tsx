@@ -3,12 +3,13 @@ import { PageHeader } from '@/components/shared/page-header';
 import { DataTable } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { useCompanyStore } from '@/stores/company.store';
-import { useCashFlows, useCreateCashFlow, useUpdateCashFlow, useDeleteCashFlow, useValidateCashFlow, useMonthlySummary } from '../hooks/use-cashflow';
+import { useCashFlows, useCreateCashFlow, useUpdateCashFlow, useDeleteCashFlow, useValidateCashFlow, useMonthlySummary, usePayables, useCreatePayable, useUpdatePayable } from '../hooks/use-cashflow';
 import { CashFlowForm } from '../components/cashflow-form';
+import { PayableForm } from '../components/payable-form';
 import { getCashFlowColumns } from '../components/cashflow-columns';
 import { CashFlowSummaryCards } from '../components/cashflow-summary-cards';
 import type { CashFlow } from '@/types/database';
-import type { CashFlowFormData } from '../types';
+import type { CashFlowFormData, PayableEntry } from '../types';
 
 export default function DisbursementsPage() {
   const { currentCompany } = useCompanyStore();
@@ -16,9 +17,12 @@ export default function DisbursementsPage() {
 
   const now = new Date();
   const [formOpen, setFormOpen] = useState(false);
+  const [payableFormOpen, setPayableFormOpen] = useState(false);
   const [editingFlow, setEditingFlow] = useState<CashFlow | null>(null);
+  const [editingPayable, setEditingPayable] = useState<PayableEntry | null>(null);
 
   const { data: flows = [] } = useCashFlows(companyId, 'disbursement');
+  const { data: payables = [] } = usePayables(companyId);
   const { data: summary, isLoading: summaryLoading } = useMonthlySummary(
     companyId,
     'disbursement',
@@ -30,6 +34,8 @@ export default function DisbursementsPage() {
   const updateFlow = useUpdateCashFlow();
   const deleteFlow = useDeleteCashFlow();
   const validateFlow = useValidateCashFlow();
+  const createPayable = useCreatePayable();
+  const updatePayable = useUpdatePayable();
 
   const columns = useMemo(
     () =>
@@ -59,12 +65,32 @@ export default function DisbursementsPage() {
     }
   }
 
+  function handlePayableSave(data: Partial<PayableEntry>) {
+    if (editingPayable?.id) {
+      updatePayable.mutate(
+        { id: editingPayable.id, data },
+        { onSuccess: () => { setPayableFormOpen(false); setEditingPayable(null); } },
+      );
+    } else {
+      createPayable.mutate(
+        { companyId: companyId!, data },
+        { onSuccess: () => setPayableFormOpen(false) },
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Decaissements" description="Manage disbursements and outgoing cash flows">
+      <PageHeader title="Décaissements" description="Gestion des décaissements et dettes fournisseurs">
         <Button variant="outline">Export</Button>
-        <Button onClick={() => { setEditingFlow(null); setFormOpen(true); }}>
-          Add Disbursement
+        <Button
+          variant="outline"
+          onClick={() => { setEditingFlow(null); setFormOpen(true); }}
+        >
+          Décaissement simple
+        </Button>
+        <Button onClick={() => { setEditingPayable(null); setPayableFormOpen(true); }}>
+          Nouvelle Dette
         </Button>
       </PageHeader>
 
@@ -79,7 +105,7 @@ export default function DisbursementsPage() {
         columns={columns}
         data={flows}
         searchKey="reference"
-        searchPlaceholder="Search by reference..."
+        searchPlaceholder="Rechercher par référence..."
       />
 
       <CashFlowForm
@@ -94,6 +120,17 @@ export default function DisbursementsPage() {
         bankAccounts={[]}
         counterparties={[]}
         isLoading={createFlow.isPending || updateFlow.isPending}
+      />
+
+      <PayableForm
+        open={payableFormOpen}
+        onOpenChange={(open) => {
+          setPayableFormOpen(open);
+          if (!open) setEditingPayable(null);
+        }}
+        onSave={handlePayableSave}
+        entry={editingPayable}
+        isLoading={createPayable.isPending || updatePayable.isPending}
       />
     </div>
   );

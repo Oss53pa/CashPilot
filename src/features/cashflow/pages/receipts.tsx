@@ -3,12 +3,13 @@ import { PageHeader } from '@/components/shared/page-header';
 import { DataTable } from '@/components/shared/data-table';
 import { Button } from '@/components/ui/button';
 import { useCompanyStore } from '@/stores/company.store';
-import { useCashFlows, useCreateCashFlow, useUpdateCashFlow, useDeleteCashFlow, useValidateCashFlow, useMonthlySummary } from '../hooks/use-cashflow';
+import { useCashFlows, useCreateCashFlow, useUpdateCashFlow, useDeleteCashFlow, useValidateCashFlow, useMonthlySummary, useReceivables, useCreateReceivable, useUpdateReceivable } from '../hooks/use-cashflow';
 import { CashFlowForm } from '../components/cashflow-form';
+import { ReceivableForm } from '../components/receivable-form';
 import { getCashFlowColumns } from '../components/cashflow-columns';
 import { CashFlowSummaryCards } from '../components/cashflow-summary-cards';
 import type { CashFlow } from '@/types/database';
-import type { CashFlowFormData } from '../types';
+import type { CashFlowFormData, ReceivableEntry } from '../types';
 
 export default function ReceiptsPage() {
   const { currentCompany } = useCompanyStore();
@@ -16,9 +17,12 @@ export default function ReceiptsPage() {
 
   const now = new Date();
   const [formOpen, setFormOpen] = useState(false);
+  const [receivableFormOpen, setReceivableFormOpen] = useState(false);
   const [editingFlow, setEditingFlow] = useState<CashFlow | null>(null);
+  const [editingReceivable, setEditingReceivable] = useState<ReceivableEntry | null>(null);
 
   const { data: flows = [] } = useCashFlows(companyId, 'receipt');
+  const { data: receivables = [] } = useReceivables(companyId);
   const { data: summary, isLoading: summaryLoading } = useMonthlySummary(
     companyId,
     'receipt',
@@ -30,6 +34,8 @@ export default function ReceiptsPage() {
   const updateFlow = useUpdateCashFlow();
   const deleteFlow = useDeleteCashFlow();
   const validateFlow = useValidateCashFlow();
+  const createReceivable = useCreateReceivable();
+  const updateReceivable = useUpdateReceivable();
 
   const columns = useMemo(
     () =>
@@ -59,12 +65,32 @@ export default function ReceiptsPage() {
     }
   }
 
+  function handleReceivableSave(data: Partial<ReceivableEntry>) {
+    if (editingReceivable?.id) {
+      updateReceivable.mutate(
+        { id: editingReceivable.id, data },
+        { onSuccess: () => { setReceivableFormOpen(false); setEditingReceivable(null); } },
+      );
+    } else {
+      createReceivable.mutate(
+        { companyId: companyId!, data },
+        { onSuccess: () => setReceivableFormOpen(false) },
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Encaissements" description="Manage receipts and incoming cash flows">
+      <PageHeader title="Encaissements" description="Gestion des encaissements et créances">
         <Button variant="outline">Export</Button>
-        <Button onClick={() => { setEditingFlow(null); setFormOpen(true); }}>
-          Add Receipt
+        <Button
+          variant="outline"
+          onClick={() => { setEditingFlow(null); setFormOpen(true); }}
+        >
+          Encaissement simple
+        </Button>
+        <Button onClick={() => { setEditingReceivable(null); setReceivableFormOpen(true); }}>
+          Nouvelle Créance
         </Button>
       </PageHeader>
 
@@ -79,7 +105,7 @@ export default function ReceiptsPage() {
         columns={columns}
         data={flows}
         searchKey="reference"
-        searchPlaceholder="Search by reference..."
+        searchPlaceholder="Rechercher par référence..."
       />
 
       <CashFlowForm
@@ -94,6 +120,17 @@ export default function ReceiptsPage() {
         bankAccounts={[]}
         counterparties={[]}
         isLoading={createFlow.isPending || updateFlow.isPending}
+      />
+
+      <ReceivableForm
+        open={receivableFormOpen}
+        onOpenChange={(open) => {
+          setReceivableFormOpen(open);
+          if (!open) setEditingReceivable(null);
+        }}
+        onSave={handleReceivableSave}
+        entry={editingReceivable}
+        isLoading={createReceivable.isPending || updateReceivable.isPending}
       />
     </div>
   );
