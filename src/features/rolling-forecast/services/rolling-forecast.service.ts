@@ -1,3 +1,4 @@
+import { supabase } from '@/config/supabase';
 import type {
   Granularity,
   ForecastColumn,
@@ -10,7 +11,7 @@ import type {
 } from '../types';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Date helpers
 // ---------------------------------------------------------------------------
 
 function addDays(date: Date, days: number): Date {
@@ -45,18 +46,20 @@ function formatMonthLabel(d: Date): string {
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function rand(min: number, max: number): number {
-  return Math.round(min + Math.random() * (max - min));
-}
-
-function cell(forecast: number, opts?: Partial<ForecastCell>): ForecastCell {
+function cell(forecast: number): ForecastCell {
   return {
     forecast,
     low_80: Math.round(forecast * 0.85),
     high_80: Math.round(forecast * 1.12),
-    source: 'Proph3t 06h42',
-    ...opts,
   };
+}
+
+function computeTotal(cells: Record<string, ForecastCell>): ForecastCell {
+  let total = 0;
+  for (const c of Object.values(cells)) {
+    total += c.forecast;
+  }
+  return cell(total);
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +70,6 @@ function generateWeeklyMonthlyColumns(refDate: Date): ForecastColumn[] {
   const cols: ForecastColumn[] = [];
   const today = refDate;
 
-  // 13 weeks (S1-S13)
   for (let i = 0; i < 13; i++) {
     const start = addDays(today, i * 7);
     const end = addDays(start, 6);
@@ -78,13 +80,12 @@ function generateWeeklyMonthlyColumns(refDate: Date): ForecastColumn[] {
       type: 'week',
       start_date: formatDateShort(start),
       end_date: formatDateShort(end),
-      is_past: i < 0,
+      is_past: false,
       is_current: i === 0,
       confidence_pct: Math.max(confidence, 80),
     });
   }
 
-  // Months M4-M12 (after the 13 weeks)
   const monthStart = addDays(today, 13 * 7);
   for (let i = 0; i < 9; i++) {
     const start = addMonths(monthStart, i);
@@ -118,7 +119,7 @@ function generate13WeekColumns(refDate: Date): ForecastColumn[] {
       type: 'week',
       start_date: formatDateShort(start),
       end_date: formatDateShort(end),
-      is_past: i < 0,
+      is_past: false,
       is_current: i === 0,
       confidence_pct: Math.max(confidence, 80),
     });
@@ -169,341 +170,122 @@ function generateQuarterlyColumns(refDate: Date): ForecastColumn[] {
   return cols;
 }
 
-// ---------------------------------------------------------------------------
-// Row generators
-// ---------------------------------------------------------------------------
-
-function generateCells(
-  columns: ForecastColumn[],
-  baseWeekly: number,
-  baseMonthly: number,
-  variance: number,
-): Record<string, ForecastCell> {
-  const cells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    const base = col.type === 'week' ? baseWeekly : col.type === 'quarter' ? baseMonthly * 3 : baseMonthly;
-    const value = rand(Math.round(base * (1 - variance)), Math.round(base * (1 + variance)));
-    cells[col.key] = cell(value);
+function getColumnsForGranularity(granularity: Granularity, refDate: Date): ForecastColumn[] {
+  switch (granularity) {
+    case 'weekly_monthly':
+      return generateWeeklyMonthlyColumns(refDate);
+    case 'monthly':
+      return generateMonthlyColumns(refDate);
+    case 'quarterly':
+      return generateQuarterlyColumns(refDate);
+    case 'plan_13_weeks':
+      return generate13WeekColumns(refDate);
+    default:
+      return generateWeeklyMonthlyColumns(refDate);
   }
-  return cells;
 }
 
-function sumCells(rows: ForecastRow[], columns: ForecastColumn[]): Record<string, ForecastCell> {
-  const result: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let total = 0;
-    for (const row of rows) {
-      if (row.level === 0 && !row.is_total) {
-        total += row.cells[col.key]?.forecast ?? 0;
+// ---------------------------------------------------------------------------
+// Build forecast rows from real data
+// ---------------------------------------------------------------------------
+
+interface FlowRecord {
+  type: string;
+  category: string;
+  amount: number;
+  forecast_date?: string;
+  value_date?: string;
+}
+
+function groupByCategory(
+  flows: FlowRecord[],
+  columns: ForecastColumn[],
+  dateField: 'forecast_date' | 'value_date',
+): Map<string, Record<string, number>> {
+  const result = new Map<string, Record<string, number>>();
+
+  for (const flow of flows) {
+    const flowDate = flow[dateField];
+    if (!flowDate) continue;
+
+    // Find which column this date falls into
+    for (const col of columns) {
+      if (flowDate >= col.start_date && flowDate <= col.end_date) {
+        const catMap = result.get(flow.category) ?? {};
+        catMap[col.key] = (catMap[col.key] ?? 0) + flow.amount;
+        result.set(flow.category, catMap);
+        break;
       }
     }
-    result[col.key] = cell(total);
   }
+
   return result;
 }
 
-function computeTotal(cells: Record<string, ForecastCell>): ForecastCell {
-  let total = 0;
-  for (const c of Object.values(cells)) {
-    total += c.forecast;
-  }
-  return cell(total);
-}
-
-function makeRow(
-  code: string,
-  label: string,
-  level: number,
-  parentCode: string | undefined,
-  isExpandable: boolean,
-  isTotal: boolean,
-  sign: '+' | '-',
+function buildRows(
+  categoryData: Map<string, Record<string, number>>,
   columns: ForecastColumn[],
-  baseWeekly: number,
-  baseMonthly: number,
-  variance: number,
-): ForecastRow {
-  const cells = generateCells(columns, baseWeekly, baseMonthly, variance);
-  return {
-    code,
-    label,
-    level,
-    parent_code: parentCode,
-    is_expandable: isExpandable,
-    is_total: isTotal,
-    sign,
-    cells,
-    total: computeTotal(cells),
-  };
-}
+  sign: '+' | '-',
+  type: 'receipt' | 'disbursement',
+): ForecastRow[] {
+  const rows: ForecastRow[] = [];
 
-// Helper: build a parent row from children cells
-function parentFromChildren(code: string, label: string, level: number, parentCode: string | undefined, sign: '+' | '-', children: ForecastRow[], columns: ForecastColumn[]): ForecastRow {
-  const cells: Record<string, ForecastCell> = {};
-  for (const col of columns) {
-    let v = 0;
-    for (const child of children) v += child.cells[col.key]?.forecast ?? 0;
-    cells[col.key] = cell(v);
+  for (const [category, amounts] of categoryData.entries()) {
+    const cells: Record<string, ForecastCell> = {};
+    for (const col of columns) {
+      cells[col.key] = cell(amounts[col.key] ?? 0);
+    }
+
+    rows.push({
+      code: `${type === 'receipt' ? 'R' : 'D'}-${category.replace(/\s+/g, '-').toUpperCase()}`,
+      label: category,
+      level: 0,
+      is_expandable: false,
+      is_total: false,
+      sign,
+      cells,
+      total: computeTotal(cells),
+    });
   }
-  return { code, label, level, parent_code: parentCode, is_expandable: true, is_total: false, sign, cells, total: computeTotal(cells) };
-}
 
-function generateReceipts(columns: ForecastColumn[]): ForecastRow[] {
-  const rows: ForecastRow[] = [];
+  // Add total row
+  if (rows.length > 0) {
+    const totalCells: Record<string, ForecastCell> = {};
+    for (const col of columns) {
+      let colTotal = 0;
+      for (const row of rows) {
+        colTotal += row.cells[col.key]?.forecast ?? 0;
+      }
+      totalCells[col.key] = cell(colTotal);
+    }
 
-  // ── Loyers fixes — par locataire (level 2) ────────────────────
-  const locatairesFixes = [
-    makeRow('R-LOY-FIX-ZARA', 'ZARA CI — Boutique A12', 2, 'R-LOY-FIX', false, false, '+', columns, 2_100_000, 8_400_000, 0.03),
-    makeRow('R-LOY-FIX-CARREF', 'CARREFOUR Market — Ancre RDC', 2, 'R-LOY-FIX', false, false, '+', columns, 1_800_000, 7_200_000, 0.04),
-    makeRow('R-LOY-FIX-MTN', 'MTN Boutique — B07', 2, 'R-LOY-FIX', false, false, '+', columns, 950_000, 3_800_000, 0.05),
-    makeRow('R-LOY-FIX-ORANGE', 'Orange CI — B15', 2, 'R-LOY-FIX', false, false, '+', columns, 1_200_000, 4_800_000, 0.04),
-    makeRow('R-LOY-FIX-BAQ', 'Banque Atlantique — C01', 2, 'R-LOY-FIX', false, false, '+', columns, 850_000, 3_400_000, 0.03),
-    makeRow('R-LOY-FIX-CFAO', 'CFAO Motors — Kiosque K3', 2, 'R-LOY-FIX', false, false, '+', columns, 600_000, 2_400_000, 0.06),
-    makeRow('R-LOY-FIX-TOTAL', 'Total Energies — Station', 2, 'R-LOY-FIX', false, false, '+', columns, 500_000, 2_000_000, 0.03),
-    makeRow('R-LOY-FIX-JUMIA', 'Jumia CI — D02', 2, 'R-LOY-FIX', false, false, '+', columns, 500_000, 2_000_000, 0.08),
-  ];
-  const loyersFixes = parentFromChildren('R-LOY-FIX', 'Loyers fixes', 1, 'R-LOY', '+', locatairesFixes, columns);
-
-  // ── Charges locatives — par locataire (level 2) ───────────────
-  const locatairesCharges = [
-    makeRow('R-LOY-CHG-ZARA', 'ZARA CI', 2, 'R-LOY-CHG', false, false, '+', columns, 380_000, 1_520_000, 0.05),
-    makeRow('R-LOY-CHG-CARREF', 'CARREFOUR Market', 2, 'R-LOY-CHG', false, false, '+', columns, 420_000, 1_680_000, 0.06),
-    makeRow('R-LOY-CHG-MTN', 'MTN Boutique', 2, 'R-LOY-CHG', false, false, '+', columns, 250_000, 1_000_000, 0.07),
-    makeRow('R-LOY-CHG-ORANGE', 'Orange CI', 2, 'R-LOY-CHG', false, false, '+', columns, 300_000, 1_200_000, 0.06),
-    makeRow('R-LOY-CHG-AUTRES', 'Autres locataires (34)', 2, 'R-LOY-CHG', false, false, '+', columns, 850_000, 3_400_000, 0.08),
-  ];
-  const charges = parentFromChildren('R-LOY-CHG', 'Charges locatives', 1, 'R-LOY', '+', locatairesCharges, columns);
-
-  const regularisations = makeRow('R-LOY-REG', 'Régularisations', 1, 'R-LOY', false, false, '+', columns, 400_000, 1_600_000, 0.15);
-
-  const loyersChildren = [loyersFixes, ...locatairesFixes, charges, ...locatairesCharges, regularisations];
-  const loyers = parentFromChildren('R-LOY', 'Loyers & Charges locatives', 0, undefined, '+', [loyersFixes, charges, regularisations], columns);
-  rows.push(loyers, loyersFixes, ...locatairesFixes, charges, ...locatairesCharges, regularisations);
-
-  // ── Loyers variables — par locataire ──────────────────────────
-  const loyVarLocataires = [
-    makeRow('R-LOYVAR-CARREF', 'CARREFOUR Market (2.5% CA)', 2, 'R-LOYVAR', false, false, '+', columns, 800_000, 3_200_000, 0.18),
-    makeRow('R-LOYVAR-ZARA', 'ZARA CI (3% CA)', 2, 'R-LOYVAR', false, false, '+', columns, 650_000, 2_600_000, 0.22),
-    makeRow('R-LOYVAR-AUTRES', 'Autres (5 locataires)', 2, 'R-LOYVAR', false, false, '+', columns, 350_000, 1_400_000, 0.2),
-  ];
-  const loyVar = parentFromChildren('R-LOYVAR', 'Loyers variables', 0, undefined, '+', loyVarLocataires, columns);
-  rows.push(loyVar, ...loyVarLocataires);
-
-  // Droits d'entrée
-  rows.push(makeRow('R-DRE', "Droits d'entrée", 0, undefined, false, false, '+', columns, 500_000, 2_000_000, 0.3));
-
-  // ── Revenus annexes ───────────────────────────────────────────
-  const parking = makeRow('R-ANN-PARK', 'Parking', 1, 'R-ANN', false, false, '+', columns, 600_000, 2_400_000, 0.1);
-  const affichage = makeRow('R-ANN-AFF', 'Affichage publicitaire', 1, 'R-ANN', false, false, '+', columns, 350_000, 1_400_000, 0.12);
-  const evenements = makeRow('R-ANN-EVT', 'Événements', 1, 'R-ANN', false, false, '+', columns, 250_000, 1_000_000, 0.25);
-  const kiosques = makeRow('R-ANN-KIO', 'Kiosques', 1, 'R-ANN', false, false, '+', columns, 200_000, 800_000, 0.08);
-  const annexes = parentFromChildren('R-ANN', 'Revenus annexes', 0, undefined, '+', [parking, affichage, evenements, kiosques], columns);
-  rows.push(annexes, parking, affichage, evenements, kiosques);
-
-  // ── Créances en recouvrement — par débiteur ───────────────────
-  const creanceDebiteurs = [
-    makeRow('R-CREC-MYPLACE', 'MY PLACE SARL — Loyers Fév-Mar', 2, 'R-CREC', false, false, '+', columns, 600_000, 2_400_000, 0.3),
-    makeRow('R-CREC-LOCB', 'Boutique Elegance — Charges Q4', 2, 'R-CREC', false, false, '+', columns, 350_000, 1_400_000, 0.2),
-    makeRow('R-CREC-LOCC', 'Boulangerie Prestige — Loyer Mar', 2, 'R-CREC', false, false, '+', columns, 250_000, 1_000_000, 0.15),
-  ];
-  const creances = parentFromChildren('R-CREC', 'Créances en recouvrement', 0, undefined, '+', creanceDebiteurs, columns);
-  rows.push(creances, ...creanceDebiteurs);
-
-  rows.push(makeRow('R-CONT', 'Recouvrement contentieux', 0, undefined, false, false, '+', columns, 300_000, 1_200_000, 0.35));
-  rows.push(makeRow('R-PLAC', 'Placements arrivant à échéance', 0, undefined, false, false, '+', columns, 0, 5_000_000, 0.5));
-  rows.push(makeRow('R-LCRED', 'Tirages ligne de crédit', 0, undefined, false, false, '+', columns, 0, 0, 0));
-  rows.push(makeRow('R-REMB', 'Remboursements reçus', 0, undefined, false, false, '+', columns, 150_000, 600_000, 0.15));
-
-  // TOTAL
-  const totalCells = sumCells(rows, columns);
-  rows.push({ code: 'R-TOTAL', label: 'TOTAL ENCAISSEMENTS', level: 0, is_expandable: false, is_total: true, sign: '+', cells: totalCells, total: computeTotal(totalCells) });
-
-  return rows;
-}
-
-function generateDisbursements(columns: ForecastColumn[]): ForecastRow[] {
-  const rows: ForecastRow[] = [];
-
-  // ══════════════════════════════════════════════════════════════
-  // CHARGES D'EXPLOITATION — avec drill-down par fournisseur
-  // ══════════════════════════════════════════════════════════════
-
-  // ── Personnel (level 1 expandable → fournisseurs level 2) ────
-  const persDetails = [
-    makeRow('D-EXP-PERS-SAL', 'Salaires bruts (42 ETP)', 2, 'D-EXP-PERS', false, false, '-', columns, 2_400_000, 9_600_000, 0.02),
-    makeRow('D-EXP-PERS-CNPS', 'Charges CNPS patronales', 2, 'D-EXP-PERS', false, false, '-', columns, 720_000, 2_880_000, 0.02),
-    makeRow('D-EXP-PERS-PRIM', 'Primes et gratifications', 2, 'D-EXP-PERS', false, false, '-', columns, 280_000, 1_120_000, 0.1),
-    makeRow('D-EXP-PERS-AVN', 'Avantages en nature', 2, 'D-EXP-PERS', false, false, '-', columns, 100_000, 400_000, 0.05),
-  ];
-  const personnel = parentFromChildren('D-EXP-PERS', 'Personnel', 1, 'D-EXP', '-', persDetails, columns);
-
-  // ── Maintenance (level 1 → fournisseurs level 2) ─────────────
-  const maintDetails = [
-    makeRow('D-EXP-MAINT-SOGECI', 'SOGECI BTP — Contrat annuel', 2, 'D-EXP-MAINT', false, false, '-', columns, 450_000, 1_800_000, 0.05),
-    makeRow('D-EXP-MAINT-KONE', 'KONE CI — Ascenseurs', 2, 'D-EXP-MAINT', false, false, '-', columns, 280_000, 1_120_000, 0.03),
-    makeRow('D-EXP-MAINT-OTIS', 'OTIS Afrique — Escalators', 2, 'D-EXP-MAINT', false, false, '-', columns, 220_000, 880_000, 0.04),
-    makeRow('D-EXP-MAINT-CURA', 'Maintenance curative (divers)', 2, 'D-EXP-MAINT', false, false, '-', columns, 250_000, 1_000_000, 0.25),
-  ];
-  const maintenance = parentFromChildren('D-EXP-MAINT', 'Maintenance', 1, 'D-EXP', '-', maintDetails, columns);
-
-  // ── Énergie (level 1 → fournisseurs level 2) ─────────────────
-  const energieDetails = [
-    makeRow('D-EXP-ENRG-CIE', 'CIE — Électricité', 2, 'D-EXP-ENRG', false, false, '-', columns, 1_100_000, 4_400_000, 0.1),
-    makeRow('D-EXP-ENRG-SODECI', 'SODECI — Eau', 2, 'D-EXP-ENRG', false, false, '-', columns, 350_000, 1_400_000, 0.08),
-    makeRow('D-EXP-ENRG-CARB', 'TOTAL Energies — Carburant GE', 2, 'D-EXP-ENRG', false, false, '-', columns, 350_000, 1_400_000, 0.15),
-  ];
-  const energie = parentFromChildren('D-EXP-ENRG', 'Énergie', 1, 'D-EXP', '-', energieDetails, columns);
-
-  // ── Sécurité (level 1 → fournisseurs level 2) ────────────────
-  const secuDetails = [
-    makeRow('D-EXP-SEC-GS4', 'G4S Sécurité CI — Gardiennage', 2, 'D-EXP-SEC', false, false, '-', columns, 550_000, 2_200_000, 0.03),
-    makeRow('D-EXP-SEC-VIGI', 'Vigile Plus — Vidéosurveillance', 2, 'D-EXP-SEC', false, false, '-', columns, 250_000, 1_000_000, 0.05),
-  ];
-  const securite = parentFromChildren('D-EXP-SEC', 'Sécurité', 1, 'D-EXP', '-', secuDetails, columns);
-
-  // ── Nettoyage (level 1 → fournisseurs level 2) ───────────────
-  const nettDetails = [
-    makeRow('D-EXP-NET-OZONE', 'Ozone Services — Nettoyage', 2, 'D-EXP-NET', false, false, '-', columns, 380_000, 1_520_000, 0.04),
-    makeRow('D-EXP-NET-HYGCI', 'Hygiène CI — Dératisation', 2, 'D-EXP-NET', false, false, '-', columns, 120_000, 480_000, 0.05),
-    makeRow('D-EXP-NET-DECH', 'SIPRA — Collecte déchets', 2, 'D-EXP-NET', false, false, '-', columns, 100_000, 400_000, 0.03),
-  ];
-  const nettoyage = parentFromChildren('D-EXP-NET', 'Nettoyage', 1, 'D-EXP', '-', nettDetails, columns);
-
-  // ── Assurances (level 1 → fournisseurs level 2) ──────────────
-  const assDetails = [
-    makeRow('D-EXP-ASS-NSIA', 'NSIA Assurances — Multirisque', 2, 'D-EXP-ASS', false, false, '-', columns, 250_000, 1_000_000, 0.02),
-    makeRow('D-EXP-ASS-SAHAM', 'Saham Assurance — RC Pro', 2, 'D-EXP-ASS', false, false, '-', columns, 150_000, 600_000, 0.02),
-  ];
-  const assurances = parentFromChildren('D-EXP-ASS', 'Assurances', 1, 'D-EXP', '-', assDetails, columns);
-
-  // ── Honoraires (level 1 → fournisseurs level 2) ──────────────
-  const honDetails = [
-    makeRow('D-EXP-HON-KPMG', 'KPMG CI — Audit et conseil', 2, 'D-EXP-HON', false, false, '-', columns, 200_000, 800_000, 0.15),
-    makeRow('D-EXP-HON-EDJO', 'Cabinet Edjou & Associés — Juridique', 2, 'D-EXP-HON', false, false, '-', columns, 150_000, 600_000, 0.2),
-    makeRow('D-EXP-HON-FIDAL', 'FIDAL Afrique — Conseil fiscal', 2, 'D-EXP-HON', false, false, '-', columns, 150_000, 600_000, 0.25),
-  ];
-  const honoraires = parentFromChildren('D-EXP-HON', 'Honoraires', 1, 'D-EXP', '-', honDetails, columns);
-
-  // ── Marketing (level 1 → fournisseurs level 2) ───────────────
-  const mktDetails = [
-    makeRow('D-EXP-MKT-VOODOO', 'Voodoo Communication — Digital', 2, 'D-EXP-MKT', false, false, '-', columns, 300_000, 1_200_000, 0.2),
-    makeRow('D-EXP-MKT-EVENTS', 'Events Corp CI — Animations', 2, 'D-EXP-MKT', false, false, '-', columns, 250_000, 1_000_000, 0.3),
-    makeRow('D-EXP-MKT-SIGN', 'SignaPrint — Signalétique', 2, 'D-EXP-MKT', false, false, '-', columns, 150_000, 600_000, 0.15),
-  ];
-  const marketing = parentFromChildren('D-EXP-MKT', 'Marketing', 1, 'D-EXP', '-', mktDetails, columns);
-
-  // ── Frais généraux (level 1 → détail level 2) ────────────────
-  const fgDetails = [
-    makeRow('D-EXP-FG-FOUR', 'Fournitures de bureau', 2, 'D-EXP-FG', false, false, '-', columns, 80_000, 320_000, 0.1),
-    makeRow('D-EXP-FG-ORANGE', 'Orange Business — Télécoms', 2, 'D-EXP-FG', false, false, '-', columns, 120_000, 480_000, 0.05),
-    makeRow('D-EXP-FG-DEPL', 'Frais de déplacement', 2, 'D-EXP-FG', false, false, '-', columns, 50_000, 200_000, 0.15),
-    makeRow('D-EXP-FG-LIC', 'Licences et abonnements', 2, 'D-EXP-FG', false, false, '-', columns, 50_000, 200_000, 0.05),
-  ];
-  const fraisGen = parentFromChildren('D-EXP-FG', 'Frais généraux', 1, 'D-EXP', '-', fgDetails, columns);
-
-  const caisse = makeRow('D-EXP-CAI', 'Caisse', 1, 'D-EXP', false, false, '-', columns, 200_000, 800_000, 0.15);
-  const mobileMoney = makeRow('D-EXP-MM', 'Mobile Money', 1, 'D-EXP', false, false, '-', columns, 150_000, 600_000, 0.1);
-
-  // Build all exploitation level-1 parents for the total
-  const expLevel1 = [personnel, maintenance, energie, securite, nettoyage, assurances, honoraires, marketing, fraisGen, caisse, mobileMoney];
-  const expTotal = parentFromChildren('D-EXP', "Charges d'exploitation", 0, undefined, '-', expLevel1, columns);
-  rows.push(expTotal);
-  rows.push(personnel, ...persDetails);
-  rows.push(maintenance, ...maintDetails);
-  rows.push(energie, ...energieDetails);
-  rows.push(securite, ...secuDetails);
-  rows.push(nettoyage, ...nettDetails);
-  rows.push(assurances, ...assDetails);
-  rows.push(honoraires, ...honDetails);
-  rows.push(marketing, ...mktDetails);
-  rows.push(fraisGen, ...fgDetails);
-  rows.push(caisse, mobileMoney);
-
-  // ══════════════════════════════════════════════════════════════
-  // OBLIGATIONS FISCALES — par administration
-  // ══════════════════════════════════════════════════════════════
-  const tva = makeRow('D-FISC-TVA', 'TVA nette — DGI', 1, 'D-FISC', false, false, '-', columns, 1_500_000, 6_000_000, 0.08);
-  const is_ = makeRow('D-FISC-IS', 'IS / Acomptes — DGI', 1, 'D-FISC', false, false, '-', columns, 0, 3_500_000, 0.1);
-  const patente = makeRow('D-FISC-PAT', 'Patente — Mairie Yopougon', 1, 'D-FISC', false, false, '-', columns, 0, 1_200_000, 0.05);
-  const cnps = makeRow('D-FISC-CNPS', 'CNPS — Charges sociales', 1, 'D-FISC', false, false, '-', columns, 800_000, 3_200_000, 0.03);
-  const fiscLevel1 = [tva, is_, patente, cnps];
-  const fisc = parentFromChildren('D-FISC', 'Obligations fiscales', 0, undefined, '-', fiscLevel1, columns);
-  rows.push(fisc, ...fiscLevel1);
-
-  // ══════════════════════════════════════════════════════════════
-  // SERVICE DE LA DETTE — par banque / contrat
-  // ══════════════════════════════════════════════════════════════
-  const debtCapDetails = [
-    makeRow('D-DEBT-CAP-SGBCI', 'SGBCI — Prêt immobilier #2024-001', 2, 'D-DEBT-CAP', false, false, '-', columns, 1_200_000, 4_800_000, 0.01),
-    makeRow('D-DEBT-CAP-BIAO', 'BIAO CI — Crédit équipement #2025-003', 2, 'D-DEBT-CAP', false, false, '-', columns, 800_000, 3_200_000, 0.01),
-  ];
-  const capital = parentFromChildren('D-DEBT-CAP', 'Remboursements capital', 1, 'D-DEBT', '-', debtCapDetails, columns);
-
-  const debtIntDetails = [
-    makeRow('D-DEBT-INT-SGBCI', 'SGBCI — Intérêts 7.5%', 2, 'D-DEBT-INT', false, false, '-', columns, 500_000, 2_000_000, 0.01),
-    makeRow('D-DEBT-INT-BIAO', 'BIAO CI — Intérêts 8.2%', 2, 'D-DEBT-INT', false, false, '-', columns, 300_000, 1_200_000, 0.01),
-  ];
-  const interets = parentFromChildren('D-DEBT-INT', 'Intérêts d\'emprunt', 1, 'D-DEBT', '-', debtIntDetails, columns);
-
-  const ligneCT = makeRow('D-DEBT-LCT', 'Remboursements lignes CT', 1, 'D-DEBT', false, false, '-', columns, 0, 0, 0);
-  const debtLevel1 = [capital, interets, ligneCT];
-  const debt = parentFromChildren('D-DEBT', 'Service de la dette', 0, undefined, '-', debtLevel1, columns);
-  rows.push(debt);
-  rows.push(capital, ...debtCapDetails);
-  rows.push(interets, ...debtIntDetails);
-  rows.push(ligneCT);
-
-  // ══════════════════════════════════════════════════════════════
-  // CAPEX — par opération et prestataire
-  // ══════════════════════════════════════════════════════════════
-  const capexDetails1 = [
-    makeRow('D-CAPEX-1-SOGECI', 'SOGECI BTP — Situation 2', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 6_000_000, 0.25),
-    makeRow('D-CAPEX-1-ELEC', 'SNEDAI Electricité — Lot électrique', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 3_500_000, 0.2),
-    makeRow('D-CAPEX-1-PLOMB', 'Plomberie Nationale — Lot fluides', 2, 'D-CAPEX-1', false, false, '-', columns, 0, 2_500_000, 0.2),
-  ];
-  const capex1 = parentFromChildren('D-CAPEX-1', 'Rénovation Aile Nord', 1, 'D-CAPEX', '-', capexDetails1, columns);
-
-  const capexDetails2 = [
-    makeRow('D-CAPEX-2-EGC', 'EGC Construction — Terrassement', 2, 'D-CAPEX-2', false, false, '-', columns, 0, 5_000_000, 0.15),
-    makeRow('D-CAPEX-2-BETON', 'Société Ivoirienne de Béton — Dalles', 2, 'D-CAPEX-2', false, false, '-', columns, 0, 3_000_000, 0.2),
-  ];
-  const capex2 = parentFromChildren('D-CAPEX-2', 'Extension Parking B', 1, 'D-CAPEX', '-', capexDetails2, columns);
-
-  const capexDetails3 = [
-    makeRow('D-CAPEX-3-CLIM', 'Clim Afrique SARL — Équipements CVC', 2, 'D-CAPEX-3', false, false, '-', columns, 0, 3_500_000, 0.12),
-    makeRow('D-CAPEX-3-GAI', 'Gaines & Conduits CI — Installation', 2, 'D-CAPEX-3', false, false, '-', columns, 0, 1_500_000, 0.15),
-  ];
-  const capex3 = parentFromChildren('D-CAPEX-3', 'Système HVAC', 1, 'D-CAPEX', '-', capexDetails3, columns);
-
-  const capexLevel1 = [capex1, capex2, capex3];
-  const capex = parentFromChildren('D-CAPEX', 'CAPEX planifié', 0, undefined, '-', capexLevel1, columns);
-  rows.push(capex);
-  rows.push(capex1, ...capexDetails1);
-  rows.push(capex2, ...capexDetails2);
-  rows.push(capex3, ...capexDetails3);
-
-  // Placements effectués
-  rows.push(makeRow('D-PLAC', 'Placements effectués', 0, undefined, false, false, '-', columns, 0, 3_000_000, 0.5));
-
-  // ══════════════════════════════════════════════════════════════
-  // RESTITUTIONS — par bénéficiaire
-  // ══════════════════════════════════════════════════════════════
-  const restDepDetails = [
-    makeRow('D-REST-DEP-MYPL', 'MY PLACE SARL — Fin bail Juin', 2, 'D-REST-DEP', false, false, '-', columns, 100_000, 400_000, 0.2),
-    makeRow('D-REST-DEP-PHARM', 'Pharmacie du Centre — Fin bail Août', 2, 'D-REST-DEP', false, false, '-', columns, 100_000, 400_000, 0.15),
-  ];
-  const depots = parentFromChildren('D-REST-DEP', 'Dépôts de garantie', 1, 'D-REST', '-', restDepDetails, columns);
-  const avoirs = makeRow('D-REST-AVO', 'Avoirs à rembourser', 1, 'D-REST', false, false, '-', columns, 100_000, 400_000, 0.15);
-  const avancesIC = makeRow('D-REST-AIC', 'Remboursement avance Cosmos Angré', 1, 'D-REST', false, false, '-', columns, 0, 500_000, 0.3);
-  const restLevel1 = [depots, avoirs, avancesIC];
-  const restitutions = parentFromChildren('D-REST', 'Restitutions', 0, undefined, '-', restLevel1, columns);
-  rows.push(restitutions);
-  rows.push(depots, ...restDepDetails);
-  rows.push(avoirs, avancesIC);
-
-  // TOTAL
-  const totalCells = sumCells(rows, columns as ForecastColumn[]);
-  rows.push({ code: 'D-TOTAL', label: 'TOTAL DÉCAISSEMENTS', level: 0, is_expandable: false, is_total: true, sign: '-', cells: totalCells, total: computeTotal(totalCells) });
+    rows.push({
+      code: type === 'receipt' ? 'R-TOTAL' : 'D-TOTAL',
+      label: type === 'receipt' ? 'TOTAL ENCAISSEMENTS' : 'TOTAL DÉCAISSEMENTS',
+      level: 0,
+      is_expandable: false,
+      is_total: true,
+      sign,
+      cells: totalCells,
+      total: computeTotal(totalCells),
+    });
+  } else {
+    // Even if no data, provide a total row with zeros
+    const zeroCells: Record<string, ForecastCell> = {};
+    for (const col of columns) {
+      zeroCells[col.key] = cell(0);
+    }
+    rows.push({
+      code: type === 'receipt' ? 'R-TOTAL' : 'D-TOTAL',
+      label: type === 'receipt' ? 'TOTAL ENCAISSEMENTS' : 'TOTAL DÉCAISSEMENTS',
+      level: 0,
+      is_expandable: false,
+      is_total: true,
+      sign,
+      cells: zeroCells,
+      total: cell(0),
+    });
+  }
 
   return rows;
 }
@@ -512,12 +294,13 @@ function generatePosition(
   columns: ForecastColumn[],
   receipts: ForecastRow[],
   disbursements: ForecastRow[],
+  openingBalance: number,
 ): PositionBlock {
   const receiptTotal = receipts.find((r) => r.is_total);
   const disbTotal = disbursements.find((r) => r.is_total);
-  const threshold = 50_000_000;
+  const threshold = 0; // Will be configurable
 
-  let opening = 130_000_000;
+  let opening = openingBalance;
   const positionColumns: PositionBlock['columns'] = {};
 
   for (const col of columns) {
@@ -547,57 +330,143 @@ function generatePosition(
 // Service
 // ---------------------------------------------------------------------------
 
-function getColumnsForGranularity(granularity: Granularity, refDate: Date): ForecastColumn[] {
-  switch (granularity) {
-    case 'weekly_monthly':
-      return generateWeeklyMonthlyColumns(refDate);
-    case 'monthly':
-      return generateMonthlyColumns(refDate);
-    case 'quarterly':
-      return generateQuarterlyColumns(refDate);
-    case 'plan_13_weeks':
-      return generate13WeekColumns(refDate);
-    default:
-      return generateWeeklyMonthlyColumns(refDate);
-  }
-}
-
 export const rollingForecastService = {
   async getRollingForecast(
     companyId: string,
     granularity: Granularity = 'weekly_monthly',
     scenario: 'base' | 'optimistic' | 'pessimistic' = 'base',
   ): Promise<RollingForecast> {
-    await new Promise((r) => setTimeout(r, 400));
-
-    const refDate = new Date('2026-03-18');
+    const refDate = new Date();
     const columns = getColumnsForGranularity(granularity, refDate);
-    const receipts = generateReceipts(columns);
-    const disbursements = generateDisbursements(columns);
-    const position = generatePosition(columns, receipts, disbursements);
+
+    const periodStart = columns[0].start_date;
+    const periodEnd = columns[columns.length - 1].end_date;
+
+    // Fetch company info
+    const { data: company } = await supabase
+      .from('companies')
+      .select('name, currency')
+      .eq('id', companyId)
+      .maybeSingle();
+
+    // Fetch forecasts for the full period
+    const { data: forecasts, error: fcError } = await supabase
+      .from('forecasts')
+      .select('type, category, amount, forecast_date')
+      .eq('company_id', companyId)
+      .gte('forecast_date', periodStart)
+      .lte('forecast_date', periodEnd);
+    if (fcError) throw fcError;
+
+    // Also fetch realized cash flows for past/current periods
+    const { data: cashFlows, error: cfError } = await supabase
+      .from('cash_flows')
+      .select('type, category, amount, value_date')
+      .eq('company_id', companyId)
+      .gte('value_date', periodStart)
+      .lte('value_date', periodEnd)
+      .neq('status', 'cancelled');
+    if (cfError) throw cfError;
+
+    // Merge forecasts and realized flows
+    const allFlows: FlowRecord[] = [
+      ...(forecasts ?? []).map((f) => ({
+        type: f.type,
+        category: f.category,
+        amount: f.amount,
+        forecast_date: f.forecast_date,
+        value_date: undefined as string | undefined,
+      })),
+      ...(cashFlows ?? []).map((f) => ({
+        type: f.type,
+        category: f.category,
+        amount: f.amount,
+        forecast_date: undefined as string | undefined,
+        value_date: f.value_date,
+      })),
+    ];
+
+    // Group receipts and disbursements by category
+    const receiptFlows = allFlows.filter((f) => f.type === 'receipt');
+    const disbursementFlows = allFlows.filter((f) => f.type === 'disbursement');
+
+    const receiptsByCategory = groupByCategory(
+      receiptFlows.map((f) => ({ ...f, forecast_date: f.forecast_date ?? f.value_date })),
+      columns,
+      'forecast_date',
+    );
+    const disbursementsByCategory = groupByCategory(
+      disbursementFlows.map((f) => ({ ...f, forecast_date: f.forecast_date ?? f.value_date })),
+      columns,
+      'forecast_date',
+    );
+
+    const receipts = buildRows(receiptsByCategory, columns, '+', 'receipt');
+    const disbursements = buildRows(disbursementsByCategory, columns, '-', 'disbursement');
+
+    // Opening balance from bank accounts
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts')
+      .select('current_balance')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+
+    const openingBalance = (bankAccounts ?? []).reduce((s, a) => s + a.current_balance, 0);
+    const position = generatePosition(columns, receipts, disbursements, openingBalance);
+
+    // Risk summary from real data
+    const { data: disputes } = await supabase
+      .from('dispute_files')
+      .select('amount_disputed')
+      .eq('company_id', companyId)
+      .in('status', ['open', 'in_progress']);
+
+    const disputesExpected = (disputes ?? []).reduce((s, d) => s + d.amount_disputed, 0);
+
+    const { data: capexOps } = await supabase
+      .from('capex_operations')
+      .select('budget_amount, spent_amount, end_date')
+      .eq('company_id', companyId)
+      .eq('status', 'in_progress');
+
+    const underfundedCapex = (capexOps ?? []).filter(
+      (c) => c.budget_amount - c.spent_amount > 0,
+    );
+
+    const { data: debts } = await supabase
+      .from('debt_contracts')
+      .select('covenants')
+      .eq('company_id', companyId)
+      .eq('status', 'active');
 
     const riskSummary: RiskSummary = {
-      tenants_at_risk: { count: 3, monthly_amount: 18_400_000 },
-      disputes_expected: 13_500_000,
-      capex_underfunded: { count: 1, date: '2026-04-15', amount: 28_000_000 },
-      covenant_watch: { name: 'DSCR', current: 1.21, minimum: 1.15 },
+      tenants_at_risk: { count: 0, monthly_amount: 0 },
+      disputes_expected: disputesExpected,
+      capex_underfunded: underfundedCapex.length > 0
+        ? {
+            count: underfundedCapex.length,
+            date: underfundedCapex[0]?.end_date ?? '',
+            amount: underfundedCapex.reduce((s, c) => s + (c.budget_amount - c.spent_amount), 0),
+          }
+        : null,
+      covenant_watch: null,
     };
 
     return {
       company_id: companyId,
-      company_name: 'SCI Horizon Immo',
+      company_name: company?.name ?? '',
       reference_date: formatDateShort(refDate),
-      period_start: columns[0].start_date,
-      period_end: columns[columns.length - 1].end_date,
+      period_start: periodStart,
+      period_end: periodEnd,
       granularity,
       scenario,
-      currency: 'XOF',
+      currency: company?.currency ?? 'XOF',
       columns,
       position,
       receipts,
       disbursements,
       risk_summary: riskSummary,
-      last_updated: '2026-03-21T06:42:00Z',
+      last_updated: new Date().toISOString(),
     };
   },
 
@@ -609,7 +478,6 @@ export const rollingForecastService = {
     companyId: string,
     params: SimulationParams,
   ): Promise<RollingForecast> {
-    await new Promise((r) => setTimeout(r, 600));
     const base = await this.getRollingForecast(companyId, 'weekly_monthly', 'base');
 
     // Apply simulation adjustments to receipts
@@ -635,8 +503,15 @@ export const rollingForecastService = {
       row.total = computeTotal(row.cells);
     }
 
-    // Recalculate position
-    base.position = generatePosition(base.columns, base.receipts, base.disbursements);
+    // Fetch opening balance for recalculation
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts')
+      .select('current_balance')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+
+    const openingBalance = (bankAccounts ?? []).reduce((s, a) => s + a.current_balance, 0);
+    base.position = generatePosition(base.columns, base.receipts, base.disbursements, openingBalance);
 
     return base;
   },
@@ -646,12 +521,12 @@ export const rollingForecastService = {
   },
 
   async exportRollingExcel(_forecastId: string): Promise<{ url: string }> {
-    await new Promise((r) => setTimeout(r, 800));
+    // Export functionality to be implemented
     return { url: '#export-rolling-excel' };
   },
 
   async exportPlan13WeeksPDF(_forecastId: string): Promise<{ url: string }> {
-    await new Promise((r) => setTimeout(r, 800));
+    // Export functionality to be implemented
     return { url: '#export-plan-13-weeks-pdf' };
   },
 };

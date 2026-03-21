@@ -1,189 +1,119 @@
-import type { TFTStatement, TFTClassificationRule } from '../types';
+import { supabase } from '@/config/supabase';
+import type { TFTStatement, TFTClassificationRule, TFTLineItem, TFTSection, PositionBreakdown } from '../types';
 
 // ---------------------------------------------------------------------------
-// Mock data — Cosmos Yopougon (commercial real estate, FCFA)
+// Classification rules mapping cash_flow categories to TFT sections/lines
 // ---------------------------------------------------------------------------
 
-function buildMockTFT(
-  companyId: string,
-  periodStart: string,
-  periodEnd: string,
-  method: 'direct' | 'indirect',
-  statementType: 'realized' | 'forecast' | 'hybrid',
-): TFTStatement {
-  // Section A — Exploitation
-  const exploitationReceipts = [
-    { code: 'A1', label: 'Loyers percus', current_period: 52_400_000, previous_period: 48_200_000, budget: 55_000_000, sign: '+' as const },
-    { code: 'A2', label: 'Charges locatives refacturees', current_period: 18_600_000, previous_period: 16_800_000, budget: 19_000_000, sign: '+' as const },
-    { code: 'A3', label: 'Regularisations de charges', current_period: 5_200_000, previous_period: 4_100_000, budget: 5_500_000, sign: '+' as const },
-    { code: 'A4', label: 'Revenus de parking', current_period: 3_800_000, previous_period: 3_500_000, budget: 4_000_000, sign: '+' as const },
-  ];
+const CLASSIFICATION_RULES: TFTClassificationRule[] = [
+  { category: 'Loyers', section: 'A', line: 'A1', sign: '+' },
+  { category: 'Charges locatives', section: 'A', line: 'A2', sign: '+' },
+  { category: 'Regularisations', section: 'A', line: 'A3', sign: '+' },
+  { category: 'Parking', section: 'A', line: 'A4', sign: '+' },
+  { category: 'Ventes', section: 'A', line: 'A1', sign: '+' },
+  { category: 'Salaires', section: 'A', line: 'A5', sign: '-' },
+  { category: 'Maintenance', section: 'A', line: 'A6', sign: '-' },
+  { category: 'Assurances', section: 'A', line: 'A7', sign: '-' },
+  { category: 'Frais de gestion', section: 'A', line: 'A8', sign: '-' },
+  { category: 'Impots fonciers', section: 'A', line: 'A9', sign: '-' },
+  { category: 'Taxes & Impôts', section: 'A', line: 'A9', sign: '-' },
+  { category: 'Charges financieres', section: 'A', line: 'A10', sign: '-' },
+  { category: 'Fournisseurs', section: 'A', line: 'A8', sign: '-' },
+  { category: 'Transport', section: 'A', line: 'A8', sign: '-' },
+  { category: 'Services', section: 'A', line: 'A8', sign: '-' },
+  { category: 'Cessions immobilieres', section: 'B', line: 'B1', sign: '+' },
+  { category: 'Remboursement placements', section: 'B', line: 'B2', sign: '+' },
+  { category: 'CAPEX', section: 'B', line: 'B3', sign: '-' },
+  { category: 'Travaux renovation', section: 'B', line: 'B4', sign: '-' },
+  { category: 'Depots de garantie recus', section: 'C', line: 'C1', sign: '+' },
+  { category: 'Nouveaux emprunts', section: 'C', line: 'C2', sign: '+' },
+  { category: 'Remboursement emprunts', section: 'C', line: 'C3', sign: '-' },
+  { category: 'Restitution depots', section: 'C', line: 'C4', sign: '-' },
+];
 
-  const exploitationDisbursements = [
-    { code: 'A5', label: 'Salaires et charges sociales', current_period: 12_500_000, previous_period: 11_800_000, budget: 12_000_000, sign: '-' as const },
-    { code: 'A6', label: 'Entretien et maintenance', current_period: 6_800_000, previous_period: 5_900_000, budget: 7_000_000, sign: '-' as const },
-    { code: 'A7', label: 'Assurances immobilieres', current_period: 3_200_000, previous_period: 3_000_000, budget: 3_500_000, sign: '-' as const },
-    { code: 'A8', label: 'Frais de gestion', current_period: 4_500_000, previous_period: 4_200_000, budget: 4_500_000, sign: '-' as const },
-    { code: 'A9', label: 'Impots et taxes (foncier, patente)', current_period: 8_200_000, previous_period: 7_600_000, budget: 8_500_000, sign: '-' as const },
-    { code: 'A10', label: 'Charges financieres exploitation', current_period: 5_100_000, previous_period: 4_800_000, budget: 5_000_000, sign: '-' as const },
-  ];
+// ---------------------------------------------------------------------------
+// TFT line definitions
+// ---------------------------------------------------------------------------
 
-  const totalReceiptsA = exploitationReceipts.reduce((s, r) => s + r.current_period, 0);
-  const totalReceiptsAPrev = exploitationReceipts.reduce((s, r) => s + r.previous_period, 0);
-  const totalDisbursementsA = exploitationDisbursements.reduce((s, r) => s + r.current_period, 0);
-  const totalDisbursementsAPrev = exploitationDisbursements.reduce((s, r) => s + r.previous_period, 0);
+interface TFTLineDef {
+  code: string;
+  label: string;
+  sign: '+' | '-';
+}
 
-  // Section B — Investissement
-  const investmentReceipts = [
-    { code: 'B1', label: 'Cessions d\'actifs immobiliers', current_period: 0, previous_period: 12_000_000, budget: 0, sign: '+' as const },
-    { code: 'B2', label: 'Remboursement de placements', current_period: 15_000_000, previous_period: 10_000_000, budget: 15_000_000, sign: '+' as const },
-  ];
+const EXPLOITATION_RECEIPTS: TFTLineDef[] = [
+  { code: 'A1', label: 'Loyers / Ventes percus', sign: '+' },
+  { code: 'A2', label: 'Charges locatives refacturees', sign: '+' },
+  { code: 'A3', label: 'Regularisations de charges', sign: '+' },
+  { code: 'A4', label: 'Revenus de parking / annexes', sign: '+' },
+];
 
-  const investmentDisbursements = [
-    { code: 'B3', label: 'Acquisitions immobilieres / CAPEX', current_period: 22_000_000, previous_period: 18_000_000, budget: 25_000_000, sign: '-' as const },
-    { code: 'B4', label: 'Travaux de renovation', current_period: 3_500_000, previous_period: 8_500_000, budget: 5_000_000, sign: '-' as const },
-  ];
+const EXPLOITATION_DISBURSEMENTS: TFTLineDef[] = [
+  { code: 'A5', label: 'Salaires et charges sociales', sign: '-' },
+  { code: 'A6', label: 'Entretien et maintenance', sign: '-' },
+  { code: 'A7', label: 'Assurances', sign: '-' },
+  { code: 'A8', label: 'Frais de gestion / fournisseurs', sign: '-' },
+  { code: 'A9', label: 'Impots et taxes', sign: '-' },
+  { code: 'A10', label: 'Charges financieres exploitation', sign: '-' },
+];
 
-  const totalReceiptsB = investmentReceipts.reduce((s, r) => s + r.current_period, 0);
-  const totalReceiptsBPrev = investmentReceipts.reduce((s, r) => s + r.previous_period, 0);
-  const totalDisbursementsB = investmentDisbursements.reduce((s, r) => s + r.current_period, 0);
-  const totalDisbursementsBPrev = investmentDisbursements.reduce((s, r) => s + r.previous_period, 0);
+const INVESTMENT_RECEIPTS: TFTLineDef[] = [
+  { code: 'B1', label: "Cessions d'actifs", sign: '+' },
+  { code: 'B2', label: 'Remboursement de placements', sign: '+' },
+];
 
-  // Section C — Financement
-  const financingReceipts = [
-    { code: 'C1', label: 'Depots de garantie recus', current_period: 3_200_000, previous_period: 2_800_000, budget: 3_000_000, sign: '+' as const },
-    { code: 'C2', label: 'Nouveaux emprunts tires', current_period: 0, previous_period: 25_000_000, budget: 0, sign: '+' as const },
-  ];
+const INVESTMENT_DISBURSEMENTS: TFTLineDef[] = [
+  { code: 'B3', label: 'Acquisitions / CAPEX', sign: '-' },
+  { code: 'B4', label: 'Travaux de renovation', sign: '-' },
+];
 
-  const financingDisbursements = [
-    { code: 'C3', label: 'Remboursement emprunts (principal)', current_period: 8_500_000, previous_period: 7_200_000, budget: 8_500_000, sign: '-' as const },
-    { code: 'C4', label: 'Restitution depots de garantie', current_period: 1_800_000, previous_period: 1_500_000, budget: 2_000_000, sign: '-' as const },
-  ];
+const FINANCING_RECEIPTS: TFTLineDef[] = [
+  { code: 'C1', label: 'Depots de garantie recus', sign: '+' },
+  { code: 'C2', label: 'Nouveaux emprunts tires', sign: '+' },
+];
 
-  const totalReceiptsC = financingReceipts.reduce((s, r) => s + r.current_period, 0);
-  const totalReceiptsCPrev = financingReceipts.reduce((s, r) => s + r.previous_period, 0);
-  const totalDisbursementsC = financingDisbursements.reduce((s, r) => s + r.current_period, 0);
-  const totalDisbursementsCPrev = financingDisbursements.reduce((s, r) => s + r.previous_period, 0);
+const FINANCING_DISBURSEMENTS: TFTLineDef[] = [
+  { code: 'C3', label: 'Remboursement emprunts (principal)', sign: '-' },
+  { code: 'C4', label: 'Restitution depots de garantie', sign: '-' },
+];
 
-  // Compute variance on each line
-  function addVariance<T extends { current_period: number; budget?: number }>(items: T[]): T[] {
-    return items.map((item) => ({
-      ...item,
-      variance_amount: item.budget != null ? item.current_period - item.budget : undefined,
-      variance_pct: item.budget != null && item.budget !== 0
-        ? Math.round(((item.current_period - item.budget) / item.budget) * 10000) / 100
-        : undefined,
-    }));
-  }
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  const netA = totalReceiptsA - totalDisbursementsA;
-  const netAPrev = totalReceiptsAPrev - totalDisbursementsAPrev;
-  const netB = totalReceiptsB - totalDisbursementsB;
-  const netBPrev = totalReceiptsBPrev - totalDisbursementsBPrev;
-  const netC = totalReceiptsC - totalDisbursementsC;
-  const netCPrev = totalReceiptsCPrev - totalDisbursementsCPrev;
+function classifyFlow(category: string): TFTClassificationRule | undefined {
+  return CLASSIFICATION_RULES.find(
+    (r) => r.category.toLowerCase() === category.toLowerCase(),
+  );
+}
 
-  const netVariation = netA + netB + netC;
-  const openingPosition = 130_000_000;
-  const closingPosition = openingPosition + netVariation;
+function buildLineItems(
+  lineDefs: TFTLineDef[],
+  amountsByLine: Map<string, { current: number; previous: number }>,
+  budgetByLine: Map<string, number>,
+): TFTLineItem[] {
+  return lineDefs.map((def) => {
+    const amounts = amountsByLine.get(def.code) ?? { current: 0, previous: 0 };
+    const budget = budgetByLine.get(def.code) ?? 0;
+    const variance_amount = budget !== 0 ? amounts.current - budget : undefined;
+    const variance_pct =
+      budget !== 0 ? Math.round(((amounts.current - budget) / budget) * 10000) / 100 : undefined;
 
-  // Ratios
-  const totalRevenue = totalReceiptsA; // simplified: exploitation receipts as revenue proxy
-  const freeCashFlow = netA - (totalDisbursementsB - totalReceiptsB); // Operating CF - net CAPEX
-  const operatingCfToRevenue = totalRevenue > 0 ? Math.round((netA / totalRevenue) * 10000) / 100 : 0;
-  const daysCashOnHand = totalDisbursementsA > 0 ? Math.round((closingPosition / (totalDisbursementsA / 30)) * 100) / 100 : 0;
-  const dscr = (totalDisbursementsC > 0) ? Math.round((netA / totalDisbursementsC) * 100) / 100 : 0;
-  const cashConversion = totalRevenue > 0 ? Math.round((netA / totalRevenue) * 10000) / 100 : 0;
+    return {
+      code: def.code,
+      label: def.label,
+      current_period: amounts.current,
+      previous_period: amounts.previous,
+      budget: budget || undefined,
+      variance_amount,
+      variance_pct,
+      sign: def.sign,
+    };
+  });
+}
 
-  return {
-    id: `tft-${companyId}-${periodStart}`,
-    company_id: companyId,
-    company_name: 'Cosmos Yopougon',
-    period_start: periodStart,
-    period_end: periodEnd,
-    period_type: 'monthly',
-    method,
-    statement_type: statementType,
-    scope: 'company',
-    currency: 'XOF',
-    sections: {
-      exploitation: {
-        code: 'A',
-        title: 'Flux de tresorerie lies a l\'exploitation',
-        receipts: addVariance(exploitationReceipts),
-        disbursements: addVariance(exploitationDisbursements),
-        total_receipts: totalReceiptsA,
-        total_disbursements: totalDisbursementsA,
-        net_flow: netA,
-        net_flow_previous: netAPrev,
-      },
-      investment: {
-        code: 'B',
-        title: 'Flux de tresorerie lies a l\'investissement',
-        receipts: addVariance(investmentReceipts),
-        disbursements: addVariance(investmentDisbursements),
-        total_receipts: totalReceiptsB,
-        total_disbursements: totalDisbursementsB,
-        net_flow: netB,
-        net_flow_previous: netBPrev,
-      },
-      financing: {
-        code: 'C',
-        title: 'Flux de tresorerie lies au financement',
-        receipts: addVariance(financingReceipts),
-        disbursements: addVariance(financingDisbursements),
-        total_receipts: totalReceiptsC,
-        total_disbursements: totalDisbursementsC,
-        net_flow: netC,
-        net_flow_previous: netCPrev,
-      },
-    },
-    reconciliation: {
-      net_exploitation: netA,
-      net_investment: netB,
-      net_financing: netC,
-      net_variation: netVariation,
-      opening_position: openingPosition,
-      opening_breakdown: {
-        bank: 98_000_000,
-        cash: 8_500_000,
-        mobile_money: 12_000_000,
-        prepaid: 5_500_000,
-        overdraft: -6_000_000 + 12_000_000, // net 6M to reach 130M total (98+8.5+12+5.5+6=130)
-      },
-      closing_position: closingPosition,
-      closing_breakdown: {
-        bank: 98_000_000 + Math.round(netVariation * 0.55),
-        cash: 8_500_000 + Math.round(netVariation * 0.10),
-        mobile_money: 12_000_000 + Math.round(netVariation * 0.15),
-        prepaid: 5_500_000 + Math.round(netVariation * 0.10),
-        overdraft: 6_000_000 + Math.round(netVariation * 0.10),
-      },
-      reconciliation_variance: 0,
-    },
-    complementary: {
-      non_cash_items: [
-        { label: 'Dotation aux amortissements', amount: 14_500_000 },
-        { label: 'Provisions pour depreciation', amount: 3_200_000 },
-        { label: 'Ecarts de conversion', amount: -450_000 },
-      ],
-      significant_flows: [
-        { label: 'Acquisition terrain Cocody', amount: 85_000_000, nature: 'Investissement strategique' },
-        { label: 'Remboursement anticipe pret BOA', amount: 35_000_000, nature: 'Desendettement' },
-      ],
-      ratios: {
-        operating_cf_to_revenue: operatingCfToRevenue,
-        free_cash_flow: freeCashFlow,
-        days_cash_on_hand: daysCashOnHand,
-        dscr,
-        cash_conversion: cashConversion,
-        burn_rate: undefined,
-      },
-    },
-    is_certified: false,
-    certified_by: undefined,
-    certified_at: undefined,
-  };
+function sumItems(items: TFTLineItem[], field: 'current_period' | 'previous_period'): number {
+  return items.reduce((sum, item) => sum + item[field], 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -198,9 +128,259 @@ export const tftService = {
     method: 'direct' | 'indirect' = 'direct',
     statementType: 'realized' | 'forecast' | 'hybrid' = 'realized',
   ): Promise<TFTStatement> {
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 400));
-    return buildMockTFT(companyId, periodStart, periodEnd, method, statementType);
+    // Fetch company info
+    const { data: company } = await supabase
+      .from('companies')
+      .select('name, currency')
+      .eq('id', companyId)
+      .maybeSingle();
+
+    const companyName = company?.name ?? '';
+    const currency = company?.currency ?? 'XOF';
+
+    // Fetch cash flows for current period
+    const { data: currentFlows, error: cfError } = await supabase
+      .from('cash_flows')
+      .select('type, category, amount')
+      .eq('company_id', companyId)
+      .gte('value_date', periodStart)
+      .lte('value_date', periodEnd)
+      .neq('status', 'cancelled');
+    if (cfError) throw cfError;
+
+    // Compute previous period (same duration, shifted back)
+    const pStart = new Date(periodStart);
+    const pEnd = new Date(periodEnd);
+    const durationMs = pEnd.getTime() - pStart.getTime();
+    const prevEnd = new Date(pStart.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - durationMs);
+
+    const { data: prevFlows, error: pfError } = await supabase
+      .from('cash_flows')
+      .select('type, category, amount')
+      .eq('company_id', companyId)
+      .gte('value_date', prevStart.toISOString().split('T')[0])
+      .lte('value_date', prevEnd.toISOString().split('T')[0])
+      .neq('status', 'cancelled');
+    if (pfError) throw pfError;
+
+    // Classify flows into TFT lines
+    const amountsByLine = new Map<string, { current: number; previous: number }>();
+
+    for (const flow of currentFlows ?? []) {
+      const rule = classifyFlow(flow.category);
+      if (rule) {
+        const existing = amountsByLine.get(rule.line) ?? { current: 0, previous: 0 };
+        existing.current += flow.amount;
+        amountsByLine.set(rule.line, existing);
+      }
+    }
+
+    for (const flow of prevFlows ?? []) {
+      const rule = classifyFlow(flow.category);
+      if (rule) {
+        const existing = amountsByLine.get(rule.line) ?? { current: 0, previous: 0 };
+        existing.previous += flow.amount;
+        amountsByLine.set(rule.line, existing);
+      }
+    }
+
+    // Fetch budget data for the period
+    const budgetByLine = new Map<string, number>();
+    const currentMonth = new Date(periodStart).getMonth() + 1;
+    const monthKey = `month_${String(currentMonth).padStart(2, '0')}`;
+
+    const { data: budgets } = await supabase
+      .from('budgets')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('status', 'approved')
+      .limit(1)
+      .maybeSingle();
+
+    if (budgets) {
+      const { data: budgetLines } = await supabase
+        .from('budget_lines')
+        .select('*')
+        .eq('budget_id', budgets.id);
+
+      for (const bl of budgetLines ?? []) {
+        const rule = classifyFlow(bl.category);
+        if (rule) {
+          const amount = (bl as Record<string, unknown>)[monthKey] as number ?? 0;
+          const existing = budgetByLine.get(rule.line) ?? 0;
+          budgetByLine.set(rule.line, existing + amount);
+        }
+      }
+    }
+
+    // Build sections
+    const exploitationReceipts = buildLineItems(EXPLOITATION_RECEIPTS, amountsByLine, budgetByLine);
+    const exploitationDisbursements = buildLineItems(EXPLOITATION_DISBURSEMENTS, amountsByLine, budgetByLine);
+    const investmentReceipts = buildLineItems(INVESTMENT_RECEIPTS, amountsByLine, budgetByLine);
+    const investmentDisbursements = buildLineItems(INVESTMENT_DISBURSEMENTS, amountsByLine, budgetByLine);
+    const financingReceipts = buildLineItems(FINANCING_RECEIPTS, amountsByLine, budgetByLine);
+    const financingDisbursements = buildLineItems(FINANCING_DISBURSEMENTS, amountsByLine, budgetByLine);
+
+    const totalReceiptsA = sumItems(exploitationReceipts, 'current_period');
+    const totalDisbursementsA = sumItems(exploitationDisbursements, 'current_period');
+    const netA = totalReceiptsA - totalDisbursementsA;
+    const netAPrev = sumItems(exploitationReceipts, 'previous_period') - sumItems(exploitationDisbursements, 'previous_period');
+
+    const totalReceiptsB = sumItems(investmentReceipts, 'current_period');
+    const totalDisbursementsB = sumItems(investmentDisbursements, 'current_period');
+    const netB = totalReceiptsB - totalDisbursementsB;
+    const netBPrev = sumItems(investmentReceipts, 'previous_period') - sumItems(investmentDisbursements, 'previous_period');
+
+    const totalReceiptsC = sumItems(financingReceipts, 'current_period');
+    const totalDisbursementsC = sumItems(financingDisbursements, 'current_period');
+    const netC = totalReceiptsC - totalDisbursementsC;
+    const netCPrev = sumItems(financingReceipts, 'previous_period') - sumItems(financingDisbursements, 'previous_period');
+
+    const netVariation = netA + netB + netC;
+
+    // Opening position: sum of bank account balances at period start
+    // We use current_balance minus all flows in the period as a proxy
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts')
+      .select('current_balance, account_type')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+
+    const currentTotalBalance = (bankAccounts ?? []).reduce((s, a) => s + a.current_balance, 0);
+    // Opening = current balance - net flows since period start to now
+    const nowStr = new Date().toISOString().split('T')[0];
+    const { data: flowsSincePeriodStart } = await supabase
+      .from('cash_flows')
+      .select('type, amount')
+      .eq('company_id', companyId)
+      .gte('value_date', periodStart)
+      .lte('value_date', nowStr)
+      .neq('status', 'cancelled');
+
+    const netFlowsSinceStart = (flowsSincePeriodStart ?? []).reduce((sum, f) => {
+      return sum + (f.type === 'receipt' ? f.amount : -f.amount);
+    }, 0);
+
+    const openingPosition = currentTotalBalance - netFlowsSinceStart;
+    const closingPosition = openingPosition + netVariation;
+
+    // Breakdown by account type
+    const bankBalance = (bankAccounts ?? [])
+      .filter((a) => a.account_type === 'current' || a.account_type === 'savings')
+      .reduce((s, a) => s + a.current_balance, 0);
+    const cashBalance = (bankAccounts ?? [])
+      .filter((a) => a.account_type === 'cash')
+      .reduce((s, a) => s + a.current_balance, 0);
+    const mmBalance = (bankAccounts ?? [])
+      .filter((a) => a.account_type === 'mobile_money')
+      .reduce((s, a) => s + a.current_balance, 0);
+
+    const openingBreakdown: PositionBreakdown = {
+      bank: bankBalance - (netVariation > 0 ? Math.round(netVariation * 0.55) : 0),
+      cash: cashBalance - (netVariation > 0 ? Math.round(netVariation * 0.10) : 0),
+      mobile_money: mmBalance - (netVariation > 0 ? Math.round(netVariation * 0.15) : 0),
+      prepaid: 0,
+      overdraft: 0,
+    };
+
+    const closingBreakdown: PositionBreakdown = {
+      bank: bankBalance,
+      cash: cashBalance,
+      mobile_money: mmBalance,
+      prepaid: 0,
+      overdraft: 0,
+    };
+
+    // Ratios
+    const totalRevenue = totalReceiptsA;
+    const netCapex = totalDisbursementsB - totalReceiptsB;
+    const freeCashFlow = netA - netCapex;
+    const operatingCfToRevenue = totalRevenue > 0
+      ? Math.round((netA / totalRevenue) * 10000) / 100
+      : 0;
+    const daysCashOnHand = totalDisbursementsA > 0
+      ? Math.round((closingPosition / (totalDisbursementsA / 30)) * 100) / 100
+      : 0;
+    const dscr = totalDisbursementsC > 0
+      ? Math.round((netA / totalDisbursementsC) * 100) / 100
+      : 0;
+    const cashConversion = totalRevenue > 0
+      ? Math.round((netA / totalRevenue) * 10000) / 100
+      : 0;
+
+    const exploitation: TFTSection = {
+      code: 'A',
+      title: "Flux de tresorerie lies a l'exploitation",
+      receipts: exploitationReceipts,
+      disbursements: exploitationDisbursements,
+      total_receipts: totalReceiptsA,
+      total_disbursements: totalDisbursementsA,
+      net_flow: netA,
+      net_flow_previous: netAPrev,
+    };
+
+    const investment: TFTSection = {
+      code: 'B',
+      title: "Flux de tresorerie lies a l'investissement",
+      receipts: investmentReceipts,
+      disbursements: investmentDisbursements,
+      total_receipts: totalReceiptsB,
+      total_disbursements: totalDisbursementsB,
+      net_flow: netB,
+      net_flow_previous: netBPrev,
+    };
+
+    const financing: TFTSection = {
+      code: 'C',
+      title: 'Flux de tresorerie lies au financement',
+      receipts: financingReceipts,
+      disbursements: financingDisbursements,
+      total_receipts: totalReceiptsC,
+      total_disbursements: totalDisbursementsC,
+      net_flow: netC,
+      net_flow_previous: netCPrev,
+    };
+
+    return {
+      id: `tft-${companyId}-${periodStart}`,
+      company_id: companyId,
+      company_name: companyName,
+      period_start: periodStart,
+      period_end: periodEnd,
+      period_type: 'monthly',
+      method,
+      statement_type: statementType,
+      scope: 'company',
+      currency,
+      sections: { exploitation, investment, financing },
+      reconciliation: {
+        net_exploitation: netA,
+        net_investment: netB,
+        net_financing: netC,
+        net_variation: netVariation,
+        opening_position: openingPosition,
+        opening_breakdown: openingBreakdown,
+        closing_position: closingPosition,
+        closing_breakdown: closingBreakdown,
+        reconciliation_variance: 0,
+      },
+      complementary: {
+        non_cash_items: [],
+        significant_flows: [],
+        ratios: {
+          operating_cf_to_revenue: operatingCfToRevenue,
+          free_cash_flow: freeCashFlow,
+          days_cash_on_hand: daysCashOnHand,
+          dscr,
+          cash_conversion: cashConversion,
+          burn_rate: undefined,
+        },
+      },
+      is_certified: false,
+      certified_by: undefined,
+      certified_at: undefined,
+    };
   },
 
   async getTFTComparison(
@@ -210,46 +390,28 @@ export const tftService = {
     period2Start: string,
     period2End: string,
   ): Promise<{ current: TFTStatement; previous: TFTStatement }> {
-    await new Promise((r) => setTimeout(r, 500));
-    return {
-      current: buildMockTFT(companyId, period1Start, period1End, 'direct', 'realized'),
-      previous: buildMockTFT(companyId, period2Start, period2End, 'direct', 'realized'),
-    };
+    const [current, previous] = await Promise.all([
+      this.getTFT(companyId, period1Start, period1End, 'direct', 'realized'),
+      this.getTFT(companyId, period2Start, period2End, 'direct', 'realized'),
+    ]);
+    return { current, previous };
   },
 
   async certifyTFT(
     tftId: string,
     userId: string,
   ): Promise<{ success: boolean; certified_at: string }> {
-    await new Promise((r) => setTimeout(r, 300));
-    return { success: true, certified_at: new Date().toISOString() };
+    // TFT certification could be stored in a dedicated table
+    // For now, return success
+    const certifiedAt = new Date().toISOString();
+    return { success: true, certified_at: certifiedAt };
   },
 
   async exportTFTPDF(_tftId: string): Promise<void> {
-    // Placeholder — PDF export will be implemented later
-    await new Promise((r) => setTimeout(r, 200));
+    // PDF export will be implemented later
   },
 
   getClassificationRules(): TFTClassificationRule[] {
-    return [
-      { category: 'Loyers', section: 'A', line: 'A1', sign: '+' },
-      { category: 'Charges locatives', section: 'A', line: 'A2', sign: '+' },
-      { category: 'Regularisations', section: 'A', line: 'A3', sign: '+' },
-      { category: 'Parking', section: 'A', line: 'A4', sign: '+' },
-      { category: 'Salaires', section: 'A', line: 'A5', sign: '-' },
-      { category: 'Maintenance', section: 'A', line: 'A6', sign: '-' },
-      { category: 'Assurances', section: 'A', line: 'A7', sign: '-' },
-      { category: 'Frais de gestion', section: 'A', line: 'A8', sign: '-' },
-      { category: 'Impots fonciers', section: 'A', line: 'A9', sign: '-' },
-      { category: 'Charges financieres', section: 'A', line: 'A10', sign: '-' },
-      { category: 'Cessions immobilieres', section: 'B', line: 'B1', sign: '+' },
-      { category: 'Remboursement placements', section: 'B', line: 'B2', sign: '+' },
-      { category: 'CAPEX', section: 'B', line: 'B3', sign: '-' },
-      { category: 'Travaux renovation', section: 'B', line: 'B4', sign: '-' },
-      { category: 'Depots de garantie recus', section: 'C', line: 'C1', sign: '+' },
-      { category: 'Nouveaux emprunts', section: 'C', line: 'C2', sign: '+' },
-      { category: 'Remboursement emprunts', section: 'C', line: 'C3', sign: '-' },
-      { category: 'Restitution depots', section: 'C', line: 'C4', sign: '-' },
-    ];
+    return [...CLASSIFICATION_RULES];
   },
 };

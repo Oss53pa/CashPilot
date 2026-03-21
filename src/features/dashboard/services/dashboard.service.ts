@@ -1,3 +1,5 @@
+import { supabase } from '@/config/supabase';
+
 // ─── Shared / Legacy Types ───────────────────────────────────────────────────
 
 export interface DashboardSummary {
@@ -186,214 +188,667 @@ export interface CenterManagerDashboardData {
   tenantStatus: TenantStatusBreakdown;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getMonthRange(monthsAgo: number): { start: string; end: string } {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  const start = d.toISOString().split('T')[0];
+  const endDate = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const end = endDate.toISOString().split('T')[0];
+  return { start, end };
+}
+
+function getMonthLabel(monthsAgo: number): string {
+  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function getWeekRange(weeksFromNow: number): { start: string; end: string; label: string } {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const startOfThisWeek = new Date(now);
+  startOfThisWeek.setDate(now.getDate() - dayOfWeek + 1);
+
+  const start = new Date(startOfThisWeek);
+  start.setDate(start.getDate() + weeksFromNow * 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+
+  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+  const weekNum = Math.ceil((start.getDate() + new Date(start.getFullYear(), start.getMonth(), 1).getDay()) / 7);
+  const label = `S${weekNum} (${start.getDate()}-${end.getDate()} ${months[start.getMonth()]})`;
+
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0],
+    label,
+  };
+}
+
+function balanceStatus(balance: number): 'healthy' | 'warning' | 'critical' {
+  if (balance <= 0) return 'critical';
+  if (balance < 5_000_000) return 'critical';
+  if (balance < 20_000_000) return 'warning';
+  return 'healthy';
+}
+
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export const dashboardService = {
-  // Legacy methods kept for backward compatibility
-  async getSummary(_companyId: string): Promise<DashboardSummary> {
+  async getSummary(companyId: string): Promise<DashboardSummary> {
+    // Get total balance from bank accounts
+    const { data: accounts, error: accError } = await supabase
+      .from('bank_accounts')
+      .select('current_balance')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+    if (accError) throw accError;
+
+    const totalBalance = (accounts ?? []).reduce((sum, a) => sum + (a.current_balance ?? 0), 0);
+
+    // Get current month cash flows
+    const { start, end } = getMonthRange(0);
+    const { data: flows, error: flowError } = await supabase
+      .from('cash_flows')
+      .select('type, amount')
+      .eq('company_id', companyId)
+      .gte('value_date', start)
+      .lte('value_date', end)
+      .neq('status', 'cancelled');
+    if (flowError) throw flowError;
+
+    const monthReceipts = (flows ?? [])
+      .filter((f) => f.type === 'receipt')
+      .reduce((sum, f) => sum + f.amount, 0);
+    const monthDisbursements = (flows ?? [])
+      .filter((f) => f.type === 'disbursement')
+      .reduce((sum, f) => sum + f.amount, 0);
+
+    // Pending payments count
+    const { count: pendingPayments, error: pendingError } = await supabase
+      .from('payment_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('status', 'pending_approval');
+    if (pendingError) throw pendingError;
+
+    // Alerts count
+    const { count: alertsCount, error: alertError } = await supabase
+      .from('alerts')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('is_read', false);
+    if (alertError) throw alertError;
+
     return {
-      totalBalance: 245_800_000,
-      monthReceipts: 78_500_000,
-      monthDisbursements: 52_300_000,
-      netCashFlow: 26_200_000,
-      pendingPayments: 12,
-      alertsCount: 3,
+      totalBalance,
+      monthReceipts,
+      monthDisbursements,
+      netCashFlow: monthReceipts - monthDisbursements,
+      pendingPayments: pendingPayments ?? 0,
+      alertsCount: alertsCount ?? 0,
     };
   },
 
-  async getCashFlowTrend(_companyId: string, months: number = 6): Promise<CashFlowTrendItem[]> {
-    const data: CashFlowTrendItem[] = [
-      { date: 'Oct 2025', receipts: 65_200_000, disbursements: 48_100_000, net: 17_100_000 },
-      { date: 'Nov 2025', receipts: 72_400_000, disbursements: 55_800_000, net: 16_600_000 },
-      { date: 'Dec 2025', receipts: 89_100_000, disbursements: 71_200_000, net: 17_900_000 },
-      { date: 'Jan 2026', receipts: 68_300_000, disbursements: 51_400_000, net: 16_900_000 },
-      { date: 'Feb 2026', receipts: 74_600_000, disbursements: 49_800_000, net: 24_800_000 },
-      { date: 'Mar 2026', receipts: 78_500_000, disbursements: 52_300_000, net: 26_200_000 },
-    ];
-    return data.slice(-months);
+  async getCashFlowTrend(companyId: string, months: number = 6): Promise<CashFlowTrendItem[]> {
+    const items: CashFlowTrendItem[] = [];
+
+    for (let i = months - 1; i >= 0; i--) {
+      const { start, end } = getMonthRange(i);
+      const label = getMonthLabel(i);
+
+      const { data: flows, error } = await supabase
+        .from('cash_flows')
+        .select('type, amount')
+        .eq('company_id', companyId)
+        .gte('value_date', start)
+        .lte('value_date', end)
+        .neq('status', 'cancelled');
+      if (error) throw error;
+
+      const receipts = (flows ?? [])
+        .filter((f) => f.type === 'receipt')
+        .reduce((sum, f) => sum + f.amount, 0);
+      const disbursements = (flows ?? [])
+        .filter((f) => f.type === 'disbursement')
+        .reduce((sum, f) => sum + f.amount, 0);
+
+      items.push({
+        date: label,
+        receipts,
+        disbursements,
+        net: receipts - disbursements,
+      });
+    }
+
+    return items;
   },
 
-  async getTopCategories(_companyId: string): Promise<TopCategory[]> {
-    return [
-      { name: 'Ventes', value: 42_500_000 },
-      { name: 'Salaires', value: 18_200_000 },
-      { name: 'Loyers', value: 8_500_000 },
-      { name: 'Fournisseurs', value: 12_800_000 },
-      { name: 'Transport', value: 5_400_000 },
-      { name: 'Taxes & Impôts', value: 6_100_000 },
-      { name: 'Services', value: 3_200_000 },
-      { name: 'Autres', value: 2_800_000 },
-    ];
+  async getTopCategories(companyId: string): Promise<TopCategory[]> {
+    const { start, end } = getMonthRange(0);
+
+    const { data: flows, error } = await supabase
+      .from('cash_flows')
+      .select('category, amount')
+      .eq('company_id', companyId)
+      .gte('value_date', start)
+      .lte('value_date', end)
+      .neq('status', 'cancelled');
+    if (error) throw error;
+
+    const categoryMap = new Map<string, number>();
+    for (const flow of flows ?? []) {
+      const current = categoryMap.get(flow.category) ?? 0;
+      categoryMap.set(flow.category, current + flow.amount);
+    }
+
+    return Array.from(categoryMap.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   },
 
-  async getRecentTransactions(_companyId: string, limit: number = 10): Promise<RecentTransaction[]> {
-    const transactions: RecentTransaction[] = [
-      { id: '1', date: '2026-03-18', type: 'receipt', category: 'Ventes', description: 'Paiement client - SOTRA', amount: 12_500_000, currency: 'XOF', status: 'validated' },
-      { id: '2', date: '2026-03-17', type: 'disbursement', category: 'Salaires', description: 'Paie Mars 2026 - Lot 1', amount: 8_200_000, currency: 'XOF', status: 'validated' },
-      { id: '3', date: '2026-03-17', type: 'receipt', category: 'Ventes', description: 'Facture #2026-0342 - CFAO Motors', amount: 5_800_000, currency: 'XOF', status: 'reconciled' },
-      { id: '4', date: '2026-03-16', type: 'disbursement', category: 'Fournisseurs', description: 'Achat matières premières - Nestlé CI', amount: 4_200_000, currency: 'XOF', status: 'validated' },
-      { id: '5', date: '2026-03-16', type: 'disbursement', category: 'Loyers', description: 'Loyer bureau Plateau - Mars 2026', amount: 2_500_000, currency: 'XOF', status: 'validated' },
-    ];
-    return transactions.slice(0, limit);
+  async getRecentTransactions(companyId: string, limit: number = 10): Promise<RecentTransaction[]> {
+    const { data, error } = await supabase
+      .from('cash_flows')
+      .select('id, value_date, type, category, description, amount, currency, status')
+      .eq('company_id', companyId)
+      .neq('status', 'cancelled')
+      .order('value_date', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    return (data ?? []).map((f) => ({
+      id: f.id,
+      date: f.value_date,
+      type: f.type as 'receipt' | 'disbursement',
+      category: f.category,
+      description: f.description ?? '',
+      amount: f.amount,
+      currency: f.currency,
+      status: f.status as 'pending' | 'validated' | 'reconciled',
+    }));
   },
 
   // ─── CEO Dashboard ──────────────────────────────────────────────────────────
 
-  async getCEODashboard(_tenantId: string): Promise<CEODashboardData> {
+  async getCEODashboard(tenantId: string): Promise<CEODashboardData> {
+    // Fetch all companies for this tenant
+    const { data: companies, error: compError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true);
+    if (compError) throw compError;
+
+    const companyIds = (companies ?? []).map((c) => c.id);
+
+    // Consolidated position: sum of all bank accounts across companies
+    const { data: allAccounts, error: accError } = await supabase
+      .from('bank_accounts')
+      .select('current_balance, company_id')
+      .in('company_id', companyIds)
+      .eq('is_active', true);
+    if (accError) throw accError;
+
+    const consolidatedPosition = (allAccounts ?? []).reduce(
+      (sum, a) => sum + (a.current_balance ?? 0),
+      0,
+    );
+
+    // Entity breakdown
+    const entityBreakdown: EntityBreakdown[] = (companies ?? []).map((company) => {
+      const companyAccounts = (allAccounts ?? []).filter((a) => a.company_id === company.id);
+      const position = companyAccounts.reduce((sum, a) => sum + (a.current_balance ?? 0), 0);
+      return {
+        id: company.id,
+        companyName: company.name,
+        position,
+        status: balanceStatus(position),
+      };
+    });
+
+    // Forecasts for J+30 and J+90
+    const now = new Date();
+    const j30 = new Date(now);
+    j30.setDate(j30.getDate() + 30);
+    const j90 = new Date(now);
+    j90.setDate(j90.getDate() + 90);
+
+    const { data: forecasts30, error: fc30Error } = await supabase
+      .from('forecasts')
+      .select('type, amount')
+      .in('company_id', companyIds)
+      .lte('forecast_date', j30.toISOString().split('T')[0])
+      .gte('forecast_date', now.toISOString().split('T')[0]);
+    if (fc30Error) throw fc30Error;
+
+    const forecastNet30 = (forecasts30 ?? []).reduce((sum, f) => {
+      return sum + (f.type === 'receipt' ? f.amount : -f.amount);
+    }, 0);
+
+    const { data: forecasts90, error: fc90Error } = await supabase
+      .from('forecasts')
+      .select('type, amount')
+      .in('company_id', companyIds)
+      .lte('forecast_date', j90.toISOString().split('T')[0])
+      .gte('forecast_date', now.toISOString().split('T')[0]);
+    if (fc90Error) throw fc90Error;
+
+    const forecastNet90 = (forecasts90 ?? []).reduce((sum, f) => {
+      return sum + (f.type === 'receipt' ? f.amount : -f.amount);
+    }, 0);
+
+    // Alerts
+    const { data: alertRows, error: alertError } = await supabase
+      .from('alerts')
+      .select('*')
+      .in('company_id', companyIds)
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (alertError) throw alertError;
+
+    const alerts: CEOAlert[] = (alertRows ?? []).map((a) => ({
+      id: a.id,
+      title: a.title,
+      message: a.message,
+      severity: a.severity as 'critical' | 'warning' | 'info',
+      date: a.created_at.split('T')[0],
+    }));
+
+    // Budget vs Actual: query budget_lines and cash_flows for current month
+    const { start, end } = getMonthRange(0);
+    const currentMonth = new Date().getMonth() + 1;
+    const monthKey = `month_${String(currentMonth).padStart(2, '0')}` as string;
+
+    const { data: budgets, error: budgetError } = await supabase
+      .from('budgets')
+      .select('id, company_id')
+      .in('company_id', companyIds)
+      .eq('status', 'approved');
+    if (budgetError) throw budgetError;
+
+    const budgetIds = (budgets ?? []).map((b) => b.id);
+    let budgetVsActual: BudgetVsActualItem[] = [];
+
+    if (budgetIds.length > 0) {
+      const { data: budgetLines, error: blError } = await supabase
+        .from('budget_lines')
+        .select('*')
+        .in('budget_id', budgetIds);
+      if (blError) throw blError;
+
+      const { data: monthFlows, error: mfError } = await supabase
+        .from('cash_flows')
+        .select('type, category, amount')
+        .in('company_id', companyIds)
+        .gte('value_date', start)
+        .lte('value_date', end)
+        .neq('status', 'cancelled');
+      if (mfError) throw mfError;
+
+      // Group actuals by category
+      const actualByCategory = new Map<string, { type: string; amount: number }>();
+      for (const f of monthFlows ?? []) {
+        const existing = actualByCategory.get(f.category);
+        if (existing) {
+          existing.amount += f.amount;
+        } else {
+          actualByCategory.set(f.category, { type: f.type, amount: f.amount });
+        }
+      }
+
+      // Group budgets by category
+      const budgetByCategory = new Map<string, { type: string; amount: number }>();
+      for (const bl of budgetLines ?? []) {
+        const budgetAmount = (bl as Record<string, unknown>)[monthKey] as number ?? 0;
+        const existing = budgetByCategory.get(bl.category);
+        if (existing) {
+          existing.amount += budgetAmount;
+        } else {
+          budgetByCategory.set(bl.category, { type: bl.type, amount: budgetAmount });
+        }
+      }
+
+      // Merge
+      const allCategories = new Set([...actualByCategory.keys(), ...budgetByCategory.keys()]);
+      budgetVsActual = Array.from(allCategories).map((category) => {
+        const budgetEntry = budgetByCategory.get(category);
+        const actualEntry = actualByCategory.get(category);
+        const budget = budgetEntry?.amount ?? 0;
+        const actual = actualEntry?.amount ?? 0;
+        const variance = actual - budget;
+        const variancePercent = budget !== 0 ? Math.round((variance / budget) * 1000) / 10 : 0;
+        const type: 'revenue' | 'expense' =
+          (budgetEntry?.type ?? actualEntry?.type) === 'receipt' ? 'revenue' : 'expense';
+
+        return { category, type, budget, actual, variance, variancePercent };
+      });
+    }
+
+    // Pending approvals
+    const { data: pendingReqs, error: prError } = await supabase
+      .from('payment_requests')
+      .select('id, description, amount, requester_id, payment_date, priority')
+      .in('company_id', companyIds)
+      .eq('status', 'pending_approval')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (prError) throw prError;
+
+    const pendingApprovals: PendingApproval[] = (pendingReqs ?? []).map((r) => ({
+      id: r.id,
+      description: r.description,
+      amount: r.amount,
+      requestedBy: r.requester_id,
+      date: r.payment_date,
+      priority: r.priority as 'low' | 'medium' | 'high' | 'urgent',
+    }));
+
     return {
-      consolidatedPosition: 1_245_800_000,
-      forecastJ30: 1_312_500_000,
-      forecastJ90: 1_485_200_000,
-      alerts: [
-        {
-          id: 'a1',
-          title: 'Seuil critique atteint - Compte SGBCI',
-          message: 'Le solde du compte SGBCI Plateau est passé sous le seuil minimum de 5 000 000 FCFA.',
-          severity: 'critical',
-          date: '2026-03-19',
-        },
-        {
-          id: 'a2',
-          title: 'Dépassement budgétaire - Charges Cocody',
-          message: 'Les charges du centre Cocody dépassent le budget de 18% sur le mois en cours.',
-          severity: 'warning',
-          date: '2026-03-18',
-        },
-        {
-          id: 'a3',
-          title: 'Échéance prêt BOAD dans 5 jours',
-          message: 'Remboursement trimestriel de 45 000 000 FCFA dû le 24 mars 2026.',
-          severity: 'warning',
-          date: '2026-03-19',
-        },
-        {
-          id: 'a4',
-          title: 'Nouveau locataire en retard - Pharmacie du Plateau',
-          message: 'Premier impayé détecté : loyer mars 2026 non réglé depuis 4 jours.',
-          severity: 'info',
-          date: '2026-03-19',
-        },
-      ],
-      budgetVsActual: [
-        { category: 'Loyers encaissés', type: 'revenue', budget: 85_000_000, actual: 72_300_000, variance: -12_700_000, variancePercent: -14.9 },
-        { category: 'Charges locatives', type: 'revenue', budget: 12_000_000, actual: 11_200_000, variance: -800_000, variancePercent: -6.7 },
-        { category: 'Revenus parking', type: 'revenue', budget: 5_500_000, actual: 6_100_000, variance: 600_000, variancePercent: 10.9 },
-        { category: 'Entretien bâtiments', type: 'expense', budget: 15_000_000, actual: 17_700_000, variance: -2_700_000, variancePercent: -18.0 },
-        { category: 'Salaires & charges', type: 'expense', budget: 22_000_000, actual: 21_800_000, variance: 200_000, variancePercent: 0.9 },
-        { category: 'Assurances', type: 'expense', budget: 8_500_000, actual: 8_500_000, variance: 0, variancePercent: 0.0 },
-      ],
-      delinquentTenants: [
-        { id: 't1', name: 'Groupe Ivoire Textile', amountDue: 18_500_000, daysOverdue: 47, severity: 'critical' },
-        { id: 't2', name: 'Restaurant Le Bélier', amountDue: 4_200_000, daysOverdue: 22, severity: 'warning' },
-        { id: 't3', name: 'Pharmacie du Plateau', amountDue: 2_800_000, daysOverdue: 4, severity: 'info' },
-      ],
-      pendingApprovals: [
-        { id: 'p1', description: 'Remplacement climatisation - Immeuble Cocody', amount: 12_500_000, requestedBy: 'Kouamé Serge', date: '2026-03-17', priority: 'high' },
-        { id: 'p2', description: 'Paiement fournisseur sécurité - G4S', amount: 7_800_000, requestedBy: 'Diabaté Awa', date: '2026-03-18', priority: 'medium' },
-        { id: 'p3', description: 'Renouvellement assurance multirisque', amount: 15_200_000, requestedBy: 'Traoré Ibrahima', date: '2026-03-16', priority: 'urgent' },
-        { id: 'p4', description: 'Achat mobilier bureau - Agence Marcory', amount: 3_400_000, requestedBy: 'N\'Guessan Marie', date: '2026-03-19', priority: 'low' },
-      ],
-      entityBreakdown: [
-        { id: 'e1', companyName: 'SCI Plateau Tower', position: 485_200_000, status: 'healthy' },
-        { id: 'e2', companyName: 'SCI Cocody Business Park', position: 312_600_000, status: 'healthy' },
-        { id: 'e3', companyName: 'SCI Marcory Centre', position: 198_400_000, status: 'warning' },
-        { id: 'e4', companyName: 'SCI Riviera Résidences', position: 156_800_000, status: 'healthy' },
-        { id: 'e5', companyName: 'SCI Zone 4 Commercial', position: 92_800_000, status: 'critical' },
-      ],
+      consolidatedPosition,
+      forecastJ30: consolidatedPosition + forecastNet30,
+      forecastJ90: consolidatedPosition + forecastNet90,
+      alerts,
+      budgetVsActual,
+      delinquentTenants: [], // Requires domain-specific table (tenant tracking); returns empty until implemented
+      pendingApprovals,
+      entityBreakdown,
     };
   },
 
   // ─── CFO Dashboard ──────────────────────────────────────────────────────────
 
-  async getCFODashboard(_companyId: string): Promise<CFODashboardData> {
+  async getCFODashboard(companyId: string): Promise<CFODashboardData> {
+    // Bank positions
+    const { data: accounts, error: accError } = await supabase
+      .from('bank_accounts')
+      .select('id, account_name, bank_name, current_balance')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+    if (accError) throw accError;
+
+    // Forecasts for the next 7 days for each account
+    const now = new Date();
+    const j7 = new Date(now);
+    j7.setDate(j7.getDate() + 7);
+
+    const { data: forecasts7, error: fc7Error } = await supabase
+      .from('forecasts')
+      .select('bank_account_id, type, amount')
+      .eq('company_id', companyId)
+      .gte('forecast_date', now.toISOString().split('T')[0])
+      .lte('forecast_date', j7.toISOString().split('T')[0]);
+    if (fc7Error) throw fc7Error;
+
+    const forecastByAccount = new Map<string, number>();
+    for (const f of forecasts7 ?? []) {
+      if (f.bank_account_id) {
+        const current = forecastByAccount.get(f.bank_account_id) ?? 0;
+        forecastByAccount.set(
+          f.bank_account_id,
+          current + (f.type === 'receipt' ? f.amount : -f.amount),
+        );
+      }
+    }
+
+    const bankPositions: BankPositionItem[] = (accounts ?? []).map((a) => {
+      const forecastDelta = forecastByAccount.get(a.id) ?? 0;
+      const forecastJ7 = a.current_balance + forecastDelta;
+      return {
+        id: a.id,
+        accountName: a.account_name,
+        bankName: a.bank_name,
+        realBalance: a.current_balance,
+        forecastJ7,
+        status: balanceStatus(forecastJ7),
+      };
+    });
+
+    // Weekly plan (next 13 weeks)
+    const weeklyPlan: WeeklyPlanItem[] = [];
+    for (let w = 0; w < 13; w++) {
+      const range = getWeekRange(w);
+      const { data: weekForecasts, error: wfError } = await supabase
+        .from('forecasts')
+        .select('type, amount')
+        .eq('company_id', companyId)
+        .gte('forecast_date', range.start)
+        .lte('forecast_date', range.end);
+      if (wfError) throw wfError;
+
+      const receipts = (weekForecasts ?? [])
+        .filter((f) => f.type === 'receipt')
+        .reduce((sum, f) => sum + f.amount, 0);
+      const disbursements = (weekForecasts ?? [])
+        .filter((f) => f.type === 'disbursement')
+        .reduce((sum, f) => sum + f.amount, 0);
+
+      weeklyPlan.push({
+        week: range.label,
+        receipts,
+        disbursements,
+        net: receipts - disbursements,
+      });
+    }
+
+    // Daily actions: count unidentified flows (no counterparty), pending approvals, etc.
+    const { count: unidentifiedFlows } = await supabase
+      .from('cash_flows')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .is('counterparty_id', null)
+      .eq('status', 'pending');
+
+    const { count: pendingApprovals } = await supabase
+      .from('payment_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('status', 'pending_approval');
+
+    const dailyActions: DailyActionCounts = {
+      unidentifiedFlows: unidentifiedFlows ?? 0,
+      missingCashCounts: 0, // Domain-specific; returns 0 until cash register tracking is implemented
+      pendingApprovals: pendingApprovals ?? 0,
+      missingBankImports: 0, // Domain-specific; returns 0 until bank import tracking is implemented
+    };
+
+    // VAT due: next upcoming VAT tax obligation
+    const { data: vatObligation, error: vatError } = await supabase
+      .from('tax_obligations')
+      .select('amount, due_date')
+      .eq('company_id', companyId)
+      .eq('type', 'vat')
+      .eq('status', 'upcoming')
+      .order('due_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (vatError) throw vatError;
+
+    let vatDue: VATDue;
+    if (vatObligation) {
+      const dueDate = new Date(vatObligation.due_date);
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+      );
+      vatDue = {
+        amount: vatObligation.amount,
+        deadline: vatObligation.due_date,
+        daysRemaining,
+      };
+    } else {
+      vatDue = { amount: 0, deadline: '', daysRemaining: 0 };
+    }
+
+    // Financial ratios: compute from real data
+    const totalBalance = (accounts ?? []).reduce((sum, a) => sum + a.current_balance, 0);
+    const { start: monthStart, end: monthEnd } = getMonthRange(0);
+    const { data: monthFlows, error: mfError } = await supabase
+      .from('cash_flows')
+      .select('type, amount, value_date')
+      .eq('company_id', companyId)
+      .gte('value_date', monthStart)
+      .lte('value_date', monthEnd)
+      .neq('status', 'cancelled');
+    if (mfError) throw mfError;
+
+    const monthDisb = (monthFlows ?? [])
+      .filter((f) => f.type === 'disbursement')
+      .reduce((s, f) => s + f.amount, 0);
+    const monthRec = (monthFlows ?? [])
+      .filter((f) => f.type === 'receipt')
+      .reduce((s, f) => s + f.amount, 0);
+
+    const dailyBurn = monthDisb > 0 ? monthDisb / 30 : 1;
+    const daysCashOnHand = dailyBurn > 0 ? Math.round(totalBalance / dailyBurn) : 0;
+
+    // DSO: average days from operation_date to value_date for receipts
+    const receiptsWithDates = (monthFlows ?? []).filter((f) => f.type === 'receipt');
+    const dso = receiptsWithDates.length > 0 ? 0 : 0; // Would require operation_date data
+
+    const financialRatios: FinancialRatio[] = [
+      {
+        name: 'Days Cash on Hand',
+        value: daysCashOnHand,
+        unit: 'jours',
+        status: daysCashOnHand > 30 ? 'good' : daysCashOnHand > 15 ? 'warning' : 'critical',
+      },
+      {
+        name: 'Taux de recouvrement',
+        value: monthRec > 0 && monthDisb > 0 ? Math.round((monthRec / (monthRec + monthDisb)) * 1000) / 10 : 0,
+        unit: '%',
+        status: 'good',
+      },
+    ];
+
+    // Fetch debt contracts for DSCR
+    const { data: debts, error: debtError } = await supabase
+      .from('debt_contracts')
+      .select('outstanding_amount, interest_rate, payment_frequency')
+      .eq('company_id', companyId)
+      .eq('status', 'active');
+    if (debtError) throw debtError;
+
+    if ((debts ?? []).length > 0) {
+      const monthlyDebtService = (debts ?? []).reduce((sum, d) => {
+        const freq = d.payment_frequency === 'monthly' ? 1 : d.payment_frequency === 'quarterly' ? 3 : 12;
+        return sum + d.outstanding_amount * (d.interest_rate / 100 / 12) * freq;
+      }, 0);
+
+      const netOperatingCf = monthRec - monthDisb;
+      const dscr = monthlyDebtService > 0
+        ? Math.round((netOperatingCf / monthlyDebtService) * 100) / 100
+        : 0;
+
+      financialRatios.push({
+        name: 'DSCR (Ratio couverture dette)',
+        value: dscr,
+        unit: 'x',
+        status: dscr >= 1.5 ? 'good' : dscr >= 1.0 ? 'warning' : 'critical',
+      });
+    }
+
     return {
-      bankPositions: [
-        { id: 'b1', accountName: 'Compte courant principal', bankName: 'SGBCI', realBalance: 145_200_000, forecastJ7: 132_800_000, status: 'healthy' },
-        { id: 'b2', accountName: 'Compte exploitation', bankName: 'BICICI', realBalance: 68_400_000, forecastJ7: 72_100_000, status: 'healthy' },
-        { id: 'b3', accountName: 'Compte séquestre loyers', bankName: 'Ecobank', realBalance: 42_600_000, forecastJ7: 38_200_000, status: 'warning' },
-        { id: 'b4', accountName: 'Compte devises', bankName: 'SIB', realBalance: 28_100_000, forecastJ7: 28_100_000, status: 'healthy' },
-        { id: 'b5', accountName: 'Caisse Plateau', bankName: 'Caisse', realBalance: 3_200_000, forecastJ7: 2_800_000, status: 'critical' },
-      ],
-      weeklyPlan: [
-        { week: 'S12 (17-23 Mar)', receipts: 42_500_000, disbursements: 38_200_000, net: 4_300_000 },
-        { week: 'S13 (24-30 Mar)', receipts: 35_800_000, disbursements: 52_100_000, net: -16_300_000 },
-        { week: 'S14 (31 Mar-6 Avr)', receipts: 48_200_000, disbursements: 41_500_000, net: 6_700_000 },
-        { week: 'S15 (7-13 Avr)', receipts: 38_900_000, disbursements: 35_200_000, net: 3_700_000 },
-        { week: 'S16 (14-20 Avr)', receipts: 44_100_000, disbursements: 39_800_000, net: 4_300_000 },
-        { week: 'S17 (21-27 Avr)', receipts: 36_500_000, disbursements: 42_300_000, net: -5_800_000 },
-        { week: 'S18 (28 Avr-4 Mai)', receipts: 52_800_000, disbursements: 44_600_000, net: 8_200_000 },
-        { week: 'S19 (5-11 Mai)', receipts: 41_200_000, disbursements: 38_900_000, net: 2_300_000 },
-        { week: 'S20 (12-18 Mai)', receipts: 47_600_000, disbursements: 43_200_000, net: 4_400_000 },
-        { week: 'S21 (19-25 Mai)', receipts: 39_800_000, disbursements: 36_500_000, net: 3_300_000 },
-        { week: 'S22 (26 Mai-1 Juin)', receipts: 55_100_000, disbursements: 48_700_000, net: 6_400_000 },
-        { week: 'S23 (2-8 Juin)', receipts: 43_400_000, disbursements: 40_100_000, net: 3_300_000 },
-        { week: 'S24 (9-15 Juin)', receipts: 46_800_000, disbursements: 44_200_000, net: 2_600_000 },
-      ],
-      dailyActions: {
-        unidentifiedFlows: 7,
-        missingCashCounts: 2,
-        pendingApprovals: 5,
-        missingBankImports: 1,
-      },
-      vatDue: {
-        amount: 14_850_000,
-        deadline: '2026-04-15',
-        daysRemaining: 27,
-      },
-      financialRatios: [
-        { name: 'Days Cash on Hand', value: 42, unit: 'jours', status: 'good' },
-        { name: 'DSO (Délai moyen encaissement)', value: 38, unit: 'jours', status: 'warning' },
-        { name: 'Taux de recouvrement', value: 87.5, unit: '%', status: 'warning' },
-        { name: 'DSCR (Ratio couverture dette)', value: 1.85, unit: 'x', status: 'good' },
-      ],
+      bankPositions,
+      weeklyPlan,
+      dailyActions,
+      vatDue,
+      financialRatios,
     };
   },
 
   // ─── Treasurer Dashboard ────────────────────────────────────────────────────
 
-  async getTreasurerDashboard(_companyId: string): Promise<TreasurerDashboardData> {
-    return {
-      toProcess: [
-        { key: 'receiptsToMatch', label: 'Encaissements à rapprocher', count: 14, icon: 'receipt' },
-        { key: 'unidentifiedFlows', label: 'Flux non identifiés', count: 7, icon: 'help-circle' },
-        { key: 'pendingCashCounts', label: 'Arrêtés de caisse en attente', count: 3, icon: 'calculator' },
-        { key: 'overdueJustifications', label: 'Justificatifs en retard', count: 5, icon: 'file-warning' },
-      ],
-      deadlines: [
-        { id: 'd1', date: '2026-03-19', description: 'Virement loyer Q1 - Groupe Ivoire Textile', amount: 18_500_000, bankAccount: 'SGBCI - Compte courant' },
-        { id: 'd2', date: '2026-03-20', description: 'Règlement fournisseur G4S (sécurité)', amount: 7_800_000, bankAccount: 'BICICI - Exploitation' },
-        { id: 'd3', date: '2026-03-21', description: 'Prélèvement CIE (électricité centres)', amount: 4_200_000, bankAccount: 'SGBCI - Compte courant' },
-        { id: 'd4', date: '2026-03-22', description: 'Échéance crédit-bail ascenseur Plateau', amount: 3_500_000, bankAccount: 'Ecobank - Séquestre' },
-        { id: 'd5', date: '2026-03-24', description: 'Remboursement prêt BOAD - Tranche Q1', amount: 45_000_000, bankAccount: 'SGBCI - Compte courant' },
-        { id: 'd6', date: '2026-03-25', description: 'Paiement prime assurance NSIA', amount: 8_500_000, bankAccount: 'BICICI - Exploitation' },
-        { id: 'd7', date: '2026-03-25', description: 'Virement salaires Mars 2026 - Lot 2', amount: 12_400_000, bankAccount: 'SGBCI - Compte courant' },
-      ],
-    };
+  async getTreasurerDashboard(companyId: string): Promise<TreasurerDashboardData> {
+    // Counts for toProcess
+    const { count: unidentifiedFlows } = await supabase
+      .from('cash_flows')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .is('counterparty_id', null)
+      .eq('status', 'pending');
+
+    const { count: pendingReceipts } = await supabase
+      .from('cash_flows')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('type', 'receipt')
+      .eq('status', 'pending');
+
+    const toProcess: ToProcessItem[] = [
+      { key: 'receiptsToMatch', label: 'Encaissements à rapprocher', count: pendingReceipts ?? 0, icon: 'receipt' },
+      { key: 'unidentifiedFlows', label: 'Flux non identifiés', count: unidentifiedFlows ?? 0, icon: 'help-circle' },
+      { key: 'pendingCashCounts', label: 'Arrêtés de caisse en attente', count: 0, icon: 'calculator' },
+      { key: 'overdueJustifications', label: 'Justificatifs en retard', count: 0, icon: 'file-warning' },
+    ];
+
+    // Upcoming deadlines: forecasts and payment requests in the next 7 days
+    const now = new Date();
+    const j7 = new Date(now);
+    j7.setDate(j7.getDate() + 7);
+
+    const { data: upcomingForecasts, error: ufError } = await supabase
+      .from('forecasts')
+      .select('id, forecast_date, category, amount, bank_account_id')
+      .eq('company_id', companyId)
+      .eq('type', 'disbursement')
+      .gte('forecast_date', now.toISOString().split('T')[0])
+      .lte('forecast_date', j7.toISOString().split('T')[0])
+      .order('forecast_date', { ascending: true });
+    if (ufError) throw ufError;
+
+    const deadlines: DeadlineItem[] = (upcomingForecasts ?? []).map((f) => ({
+      id: f.id,
+      date: f.forecast_date,
+      description: f.category,
+      amount: f.amount,
+      bankAccount: f.bank_account_id ?? '',
+    }));
+
+    return { toProcess, deadlines };
   },
 
   // ─── Center Manager Dashboard ───────────────────────────────────────────────
 
-  async getCenterManagerDashboard(_companyId: string): Promise<CenterManagerDashboardData> {
+  async getCenterManagerDashboard(companyId: string): Promise<CenterManagerDashboardData> {
+    // Follow-ups: counterparties with overdue receivables
+    // This requires domain-specific tables; query counterparties and cash_flows
+    const { data: counterparties, error: cpError } = await supabase
+      .from('counterparties')
+      .select('id, name, type')
+      .eq('company_id', companyId)
+      .eq('is_active', true);
+    if (cpError) throw cpError;
+
+    // Cash register accounts
+    const { data: cashAccounts, error: cashError } = await supabase
+      .from('bank_accounts')
+      .select('id, account_name, current_balance')
+      .eq('company_id', companyId)
+      .eq('account_type', 'cash')
+      .eq('is_active', true);
+    if (cashError) throw cashError;
+
+    const cashRegisters: CashRegisterStatus[] = (cashAccounts ?? []).map((a) => ({
+      id: a.id,
+      name: a.account_name,
+      balance: a.current_balance,
+      status: 'open' as const,
+    }));
+
     return {
-      followUps: [
-        { id: 'f1', name: 'Groupe Ivoire Textile', amountDue: 18_500_000, daysOverdue: 47, severity: 'critical', lastAction: 'Mise en demeure envoyée le 05/03' },
-        { id: 'f2', name: 'Restaurant Le Bélier', amountDue: 4_200_000, daysOverdue: 22, severity: 'warning', lastAction: 'Relance téléphonique le 15/03' },
-        { id: 'f3', name: 'Pharmacie du Plateau', amountDue: 2_800_000, daysOverdue: 4, severity: 'info', lastAction: 'Rappel email envoyé le 18/03' },
-        { id: 'f4', name: 'Boutique Mode Élégance', amountDue: 1_500_000, daysOverdue: 12, severity: 'warning', lastAction: 'Visite prévue le 20/03' },
-        { id: 'f5', name: 'Cabinet Avocat Koné & Associés', amountDue: 3_200_000, daysOverdue: 8, severity: 'info', lastAction: 'Promesse de paiement le 22/03' },
-      ],
-      cashRegisters: [
-        { id: 'r1', name: 'Caisse Accueil Plateau', balance: 1_250_000, status: 'open' },
-        { id: 'r2', name: 'Caisse Parking Cocody', balance: 680_000, status: 'open' },
-        { id: 'r3', name: 'Caisse Services Généraux', balance: 420_000, status: 'discrepancy' },
-        { id: 'r4', name: 'Caisse Maintenance', balance: 850_000, status: 'closed' },
-      ],
+      followUps: [], // Requires tenant/debtor tracking; returns empty until implemented
+      cashRegisters,
       tenantStatus: {
-        upToDate: 42,
-        late: 8,
-        dispute: 3,
-        vacant: 5,
-        total: 58,
+        upToDate: 0,
+        late: 0,
+        dispute: 0,
+        vacant: 0,
+        total: 0,
       },
     };
   },
