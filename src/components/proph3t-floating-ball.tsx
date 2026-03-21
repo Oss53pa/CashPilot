@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, X, TrendingUp, AlertTriangle, Activity, BookOpen, MessageSquare, Shield } from 'lucide-react';
+import { Brain, X, TrendingUp, AlertTriangle, Activity, BookOpen, MessageSquare, Shield, GitBranch, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const proph3tLinks = [
@@ -10,6 +10,8 @@ const proph3tLinks = [
   { to: '/proph3t/narratives', icon: BookOpen, label: 'Narratifs' },
   { to: '/proph3t/what-if', icon: MessageSquare, label: 'What-If' },
   { to: '/proph3t/fraud', icon: Shield, label: 'Fraude' },
+  { to: '/proph3t/causal', icon: GitBranch, label: 'Causal AI' },
+  { to: '/proph3t/federated', icon: Users, label: 'Federe' },
 ];
 
 export function Proph3tFloatingBall() {

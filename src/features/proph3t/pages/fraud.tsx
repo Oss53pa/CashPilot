@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Shield, ShieldAlert, ShieldCheck, ShieldOff, Eye, Search as SearchIcon,
-  AlertTriangle, CheckCircle, XCircle, Clock,
+  AlertTriangle, CheckCircle, XCircle, Clock, HelpCircle,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
@@ -14,6 +14,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
+
+import { ExplanationPanel } from '../components/explanations/explanation-panel';
+import { ExplanationHistory } from '../components/explanations/explanation-history';
+import type { AnomalyExplanation } from '../components/explanations/anomaly-explanation-types';
+import * as proph3tService from '../services/proph3t.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,6 +161,11 @@ export default function Fraud() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAlert, setSelectedAlert] = useState<FraudAlert | null>(null);
 
+  // Explanation state
+  const [explanationAlertId, setExplanationAlertId] = useState<string | null>(null);
+  const [explanationData, setExplanationData] = useState<AnomalyExplanation | null>(null);
+  const [explanationOpen, setExplanationOpen] = useState(false);
+
   const filtered = useMemo(() => {
     if (statusFilter === 'all') return alerts;
     return alerts.filter((a) => a.status === statusFilter);
@@ -171,6 +181,31 @@ export default function Fraud() {
   const handleStatusChange = (id: string, newStatus: FraudStatus) => {
     setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, status: newStatus } : a));
     setSelectedAlert(null);
+  };
+
+  const handleOpenExplanation = async (alertId: string) => {
+    setExplanationAlertId(alertId);
+    setExplanationOpen(true);
+    try {
+      const data = await proph3tService.getAnomalyExplanation(alertId);
+      setExplanationData(data);
+    } catch {
+      // handle error silently
+    }
+  };
+
+  const handleExplanationFeedback = (anomalyId: string, feedback: 'helpful' | 'not_helpful') => {
+    // In a real app, send to backend
+    console.log('Feedback for', anomalyId, ':', feedback);
+  };
+
+  const handleDismissAnomaly = (anomalyId: string) => {
+    // Find the alert and mark as dismissed
+    setAlerts((prev) => prev.map((a) =>
+      a.id === anomalyId || explanationAlertId === a.id
+        ? { ...a, status: 'dismissed' as FraudStatus }
+        : a
+    ));
   };
 
   return (
@@ -254,7 +289,7 @@ export default function Fraud() {
                   <th className="text-right px-4 py-3 font-medium">Montant</th>
                   <th className="text-center px-4 py-3 font-medium">Severite</th>
                   <th className="text-center px-4 py-3 font-medium">Statut</th>
-                  <th className="text-center px-4 py-3 font-medium">Action</th>
+                  <th className="text-center px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,9 +315,20 @@ export default function Fraud() {
                         <Badge variant={st.variant}>{st.label}</Badge>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedAlert(alert)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedAlert(alert)} title="Details">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenExplanation(alert.id)}
+                            title="Pourquoi c'est anormal ?"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                          >
+                            <HelpCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -292,6 +338,9 @@ export default function Fraud() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Explanation History */}
+      <ExplanationHistory />
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedAlert} onOpenChange={(open) => { if (!open) setSelectedAlert(null); }}>
@@ -346,6 +395,17 @@ export default function Fraud() {
               </div>
 
               <DialogFooter className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleOpenExplanation(selectedAlert.id);
+                    setSelectedAlert(null);
+                  }}
+                  className="text-purple-600 hover:text-purple-700"
+                >
+                  <HelpCircle className="mr-1.5 h-4 w-4" />
+                  Pourquoi c'est anormal ?
+                </Button>
                 {selectedAlert.status === 'detected' && (
                   <Button variant="outline" onClick={() => handleStatusChange(selectedAlert.id, 'investigating')}>
                     <Eye className="mr-1.5 h-4 w-4" />
@@ -369,6 +429,21 @@ export default function Fraud() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Explanation Panel Dialog */}
+      <ExplanationPanel
+        explanation={explanationData}
+        open={explanationOpen}
+        onOpenChange={(open) => {
+          setExplanationOpen(open);
+          if (!open) {
+            setExplanationData(null);
+            setExplanationAlertId(null);
+          }
+        }}
+        onFeedback={handleExplanationFeedback}
+        onDismiss={handleDismissAnomaly}
+      />
     </div>
   );
 }

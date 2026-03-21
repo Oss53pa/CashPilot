@@ -71,12 +71,20 @@ const Proph3tNarrativesPage = lazy(() => import('@/features/proph3t/pages/narrat
 const Proph3tWhatIfPage = lazy(() => import('@/features/proph3t/pages/what-if'));
 const Proph3tFraudPage = lazy(() => import('@/features/proph3t/pages/fraud'));
 const Proph3tPerformancePage = lazy(() => import('@/features/proph3t/pages/performance'));
+const Proph3tCausalPage = lazy(() => import('@/features/proph3t/pages/causal'));
+const Proph3tFederatedPage = lazy(() => import('@/features/proph3t/pages/federated'));
 
 // TFT (Tableau de Flux de Tresorerie)
 const TFTPage = lazy(() => import('@/features/tft/pages/tft'));
 
 // Guide
 const GuidePage = lazy(() => import('@/features/guide/pages/guide'));
+
+// Annotations
+const AnnotationsPage = lazy(() => import('@/features/annotations/pages/annotations'));
+
+// Reconciliation
+const ReconciliationPage = lazy(() => import('@/features/reconciliation/pages/reconciliation'));
 
 // Admin
 const ReportsPage = lazy(() => import('@/features/reporting/pages/reports'));
@@ -142,6 +150,8 @@ export const router = createBrowserRouter([
       { path: 'proph3t/what-if', element: <SuspenseWrapper><Proph3tWhatIfPage /></SuspenseWrapper> },
       { path: 'proph3t/fraud', element: <SuspenseWrapper><Proph3tFraudPage /></SuspenseWrapper> },
       { path: 'proph3t/performance', element: <SuspenseWrapper><Proph3tPerformancePage /></SuspenseWrapper> },
+      { path: 'proph3t/causal', element: <SuspenseWrapper><Proph3tCausalPage /></SuspenseWrapper> },
+      { path: 'proph3t/federated', element: <SuspenseWrapper><Proph3tFederatedPage /></SuspenseWrapper> },
       // Admin
       { path: 'reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
       { path: 'audit-trail', element: <SuspenseWrapper><AuditTrailPage /></SuspenseWrapper> },
@@ -151,6 +161,9 @@ export const router = createBrowserRouter([
       { path: 'consolidation', element: <SuspenseWrapper><ConsolidationPage /></SuspenseWrapper> },
       { path: 'opening-balance', element: <SuspenseWrapper><OpeningBalancePage /></SuspenseWrapper> },
       { path: 'prepaid-cards', element: <SuspenseWrapper><PrepaidCardsPage /></SuspenseWrapper> },
+      { path: 'annotations', element: <SuspenseWrapper><AnnotationsPage /></SuspenseWrapper> },
+      // Reconciliation
+      { path: 'reconciliation', element: <SuspenseWrapper><ReconciliationPage /></SuspenseWrapper> },
       // Guide
       { path: 'guide', element: <SuspenseWrapper><GuidePage /></SuspenseWrapper> },
     ],

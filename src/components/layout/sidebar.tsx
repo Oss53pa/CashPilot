@@ -27,6 +27,8 @@ import {
   BarChart3,
   FileSpreadsheet,
   CalendarRange,
+  MessageSquare,
+  GitCompare,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app.store';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -68,6 +70,8 @@ const iconMap: Record<string, LucideIcon> = {
   BarChart3,
   FileSpreadsheet,
   CalendarRange,
+  MessageSquare,
+  GitCompare,
 };
 
 // ---------------------------------------------------------------------------
@@ -107,6 +111,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
     items: [
       { labelKey: 'Comptes bancaires', icon: 'Landmark', path: '/accounts' },
       { labelKey: 'Caisse & Mobile Money', icon: 'Wallet', path: '/cash-registers' },
+      { labelKey: 'Réconciliation', icon: 'GitCompare', path: '/reconciliation' },
     ],
   },
   {
@@ -145,6 +150,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
     items: [
       { labelKey: 'Rapports', icon: 'ClipboardList', path: '/reports' },
       { labelKey: 'Audit Trail', icon: 'FileText', path: '/audit-trail' },
+      { labelKey: 'Annotations', icon: 'MessageSquare', path: '/annotations' },
       { labelKey: 'Parametres', icon: 'Settings', path: '/settings' },
       { labelKey: 'Guide d\'utilisation', icon: 'HelpCircle', path: '/guide' },
     ],

@@ -248,3 +248,63 @@ export function useTriggerBehaviorScore() {
     },
   });
 }
+
+// ============================================================================
+// UNCERTAINTY QUANTIFICATION (Extension 5)
+// ============================================================================
+
+export function useUncertaintyDistribution(forecastId: string) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['proph3t', 'uncertainty-distribution', companyId, forecastId],
+    queryFn: () => proph3tService.getUncertaintyDistribution(companyId!, forecastId),
+    enabled: !!companyId,
+  });
+}
+
+export function useFanChartData() {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['proph3t', 'fan-chart', companyId],
+    queryFn: () => proph3tService.getFanChartData(companyId!),
+    enabled: !!companyId,
+  });
+}
+
+export function useCalibrationData() {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['proph3t', 'calibration', companyId],
+    queryFn: () => proph3tService.getCalibrationData(companyId!),
+    enabled: !!companyId,
+  });
+}
+
+export function useUncertaintyDecomposition() {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['proph3t', 'uncertainty-decomposition', companyId],
+    queryFn: () => proph3tService.getUncertaintyDecomposition(companyId!),
+    enabled: !!companyId,
+  });
+}
+
+export function useProbabilityQuery() {
+  const companyId = useCompanyId();
+  return {
+    query: (date: string, threshold: number) =>
+      proph3tService.queryProbability(companyId!, date, threshold),
+  };
+}
+
+// ============================================================================
+// ANOMALY EXPLANATIONS (Extension 3)
+// ============================================================================
+
+export function useAnomalyExplanation(anomalyId: string | null) {
+  return useQuery({
+    queryKey: ['proph3t', 'anomaly-explanation', anomalyId],
+    queryFn: () => proph3tService.getAnomalyExplanation(anomalyId!),
+    enabled: !!anomalyId,
+  });
+}
