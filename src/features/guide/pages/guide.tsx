@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import {
-  BookOpen, ChevronRight, LayoutDashboard, ArrowDownToLine, ArrowUpFromLine,
-  TrendingUp, Landmark, Wallet, Calculator, Users, ArrowLeftRight,
-  Building2, CreditCard, PiggyBank, BadgeDollarSign, Gavel, FileText,
-  ShieldCheck, Brain, AlertTriangle, Activity, MessageSquare, Shield,
-  BarChart3, ClipboardList, Settings, HelpCircle,
+  BookOpen, LayoutDashboard, ArrowDownToLine,
+  TrendingUp, Landmark, Calculator,
+  Building2, Gavel,
+  ShieldCheck, AlertTriangle, Activity, MessageSquare, Shield,
+  Settings, HelpCircle,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';

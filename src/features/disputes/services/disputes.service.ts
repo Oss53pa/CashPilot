@@ -4,33 +4,25 @@ import type { DisputeFileFormData, ExitScenario, DisputeDashboard } from '../typ
 
 export const disputesService = {
   async list(companyId: string): Promise<DisputeFile[]> {
-    try {
-      const { data, error } = await supabase
-        .from('dispute_files')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('opened_date', { ascending: false });
+    const { data, error } = await supabase
+      .from('dispute_files')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('opened_date', { ascending: false });
 
-      if (error) throw error;
-      return data ?? [];
-    } catch {
-      return [];
-    }
+    if (error) throw error;
+    return data ?? [];
   },
 
   async getById(id: string): Promise<DisputeFile | null> {
-    try {
-      const { data, error } = await supabase
-        .from('dispute_files')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data, error } = await supabase
+      .from('dispute_files')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error) throw error;
-      return data;
-    } catch {
-      return null;
-    }
+    if (error) throw error;
+    return data;
   },
 
   async create(companyId: string, userId: string, formData: DisputeFileFormData): Promise<DisputeFile> {
@@ -69,43 +61,84 @@ export const disputesService = {
     if (error) throw error;
   },
 
-  // Exit Scenarios (mock data)
+  // Exit Scenarios
   async getExitScenarios(disputeId: string): Promise<ExitScenario[]> {
-    const mockScenarios: Record<string, ExitScenario[]> = {
-      default: [
-        { id: 'es-1', dispute_id: disputeId, label: 'Gain total', probability_pct: 30, expected_amount: 15_000_000, expected_date: '2026-09-15', description: 'Jugement entierement favorable' },
-        { id: 'es-2', dispute_id: disputeId, label: 'Transaction amiable', probability_pct: 45, expected_amount: 8_500_000, expected_date: '2026-06-30', description: 'Accord negociation avec contrepartie' },
-        { id: 'es-3', dispute_id: disputeId, label: 'Perte partielle', probability_pct: 20, expected_amount: 3_000_000, expected_date: '2026-12-01', description: 'Condamnation partielle - recuperation minimale' },
-        { id: 'es-4', dispute_id: disputeId, label: 'Perte totale', probability_pct: 5, expected_amount: 0, expected_date: '2026-12-01', description: 'Deboutement complet' },
-      ],
-    };
-    return mockScenarios.default;
+    const { data, error } = await supabase
+      .from('exit_scenarios')
+      .select('*')
+      .eq('dispute_id', disputeId)
+      .order('probability_pct', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as ExitScenario[];
   },
 
-  async createExitScenario(data: Omit<ExitScenario, 'id'>): Promise<ExitScenario> {
+  async createExitScenario(scenarioData: Omit<ExitScenario, 'id'>): Promise<ExitScenario> {
+    const { data, error } = await supabase
+      .from('exit_scenarios')
+      .insert(scenarioData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ExitScenario;
+  },
+
+  async deleteExitScenario(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('exit_scenarios')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Dashboard — computed from real dispute data
+  async getDisputeDashboard(companyId: string): Promise<DisputeDashboard> {
+    const { data: disputes, error } = await supabase
+      .from('dispute_files')
+      .select('*')
+      .eq('company_id', companyId)
+      .in('status', ['open', 'in_progress']);
+
+    if (error) throw error;
+
+    const activeDisputes = disputes ?? [];
+    const activeCount = activeDisputes.length;
+    const totalLitigated = activeDisputes.reduce((sum, d) => sum + d.amount_disputed, 0);
+    const totalProvisions = activeDisputes.reduce((sum, d) => sum + d.amount_provision, 0);
+
+    // Expected net value: sum of (amount * probability) for each dispute
+    const expectedNetValue = activeDisputes.reduce((sum, d) => {
+      const probability = (d.probability ?? 50) / 100;
+      return sum + d.amount_disputed * probability;
+    }, 0);
+
+    // Upcoming hearings
+    const today = new Date();
+    const upcomingHearings = activeDisputes
+      .filter((d) => d.next_hearing && new Date(d.next_hearing) >= today)
+      .map((d) => {
+        const hearingDate = new Date(d.next_hearing!);
+        const daysUntil = Math.ceil(
+          (hearingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        return {
+          dispute_id: d.id,
+          reference: d.reference,
+          hearing_date: d.next_hearing!,
+          court: d.court ?? '',
+          days_until: daysUntil,
+        };
+      })
+      .sort((a, b) => a.days_until - b.days_until);
+
     return {
-      id: `es-${Date.now()}`,
-      ...data,
-    };
-  },
-
-  async deleteExitScenario(_id: string): Promise<void> {
-    // mock delete
-  },
-
-  // Dashboard (mock data)
-  async getDisputeDashboard(_companyId: string): Promise<DisputeDashboard> {
-    return {
-      active_count: 7,
-      total_litigated: 85_000_000,
-      total_provisions: 32_500_000,
-      expected_net_value: 48_750_000,
-      upcoming_hearings: [
-        { dispute_id: 'd-1', reference: 'LIT-2026-001', hearing_date: '2026-03-25', court: 'Tribunal de Commerce Abidjan', days_until: 5 },
-        { dispute_id: 'd-2', reference: 'LIT-2026-003', hearing_date: '2026-04-02', court: 'Tribunal de Grande Instance Dakar', days_until: 13 },
-        { dispute_id: 'd-3', reference: 'ARB-2026-001', hearing_date: '2026-04-10', court: 'CCJA Abidjan', days_until: 21 },
-        { dispute_id: 'd-4', reference: 'LIT-2025-012', hearing_date: '2026-04-15', court: 'Cour d\'Appel Douala', days_until: 26 },
-      ],
+      active_count: activeCount,
+      total_litigated: totalLitigated,
+      total_provisions: totalProvisions,
+      expected_net_value: Math.round(expectedNetValue),
+      upcoming_hearings: upcomingHearings,
     };
   },
 };

@@ -708,8 +708,6 @@ export const dashboardService = {
 
     // DSO: average days from operation_date to value_date for receipts
     const receiptsWithDates = (monthFlows ?? []).filter((f) => f.type === 'receipt');
-    const dso = receiptsWithDates.length > 0 ? 0 : 0; // Would require operation_date data
-
     const financialRatios: FinancialRatio[] = [
       {
         name: 'Days Cash on Hand',
@@ -817,7 +815,7 @@ export const dashboardService = {
   async getCenterManagerDashboard(companyId: string): Promise<CenterManagerDashboardData> {
     // Follow-ups: counterparties with overdue receivables
     // This requires domain-specific tables; query counterparties and cash_flows
-    const { data: counterparties, error: cpError } = await supabase
+    const { error: cpError } = await supabase
       .from('counterparties')
       .select('id, name, type')
       .eq('company_id', companyId)

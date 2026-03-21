@@ -23,7 +23,6 @@ const modelLabels: Record<ModelType, string> = {
 
 export function ModelInfoCard({ modelType, mape, historyMonths, lastRun, className }: ModelInfoCardProps) {
   const mapePercent = (mape * 100).toFixed(1);
-  const healthColor = mape < 0.10 ? 'text-green-600' : mape < 0.20 ? 'text-yellow-600' : 'text-red-600';
   const healthBadge = mape < 0.10 ? 'success' : mape < 0.20 ? 'warning' : 'destructive';
 
   return (

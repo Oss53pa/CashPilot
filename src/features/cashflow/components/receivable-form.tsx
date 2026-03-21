@@ -32,7 +32,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CurrencyDisplay } from '@/components/shared/currency-display';
 import type {
   ReceivableEntry,
   ReceivableInstallment,

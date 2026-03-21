@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import type { Counterparty } from '@/types/database';
 import type {
-  TenantFullProfile,
   TenantIdentity,
   LeaseDetails,
   LeaseAmendment,

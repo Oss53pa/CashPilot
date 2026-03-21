@@ -22,7 +22,7 @@ export default function DisbursementsPage() {
   const [editingPayable, setEditingPayable] = useState<PayableEntry | null>(null);
 
   const { data: flows = [] } = useCashFlows(companyId, 'disbursement');
-  const { data: payables = [] } = usePayables(companyId);
+  usePayables(companyId);
   const { data: summary, isLoading: summaryLoading } = useMonthlySummary(
     companyId,
     'disbursement',

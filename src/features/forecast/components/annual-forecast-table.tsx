@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import {
-  ChevronRight, ChevronDown, TrendingUp, TrendingDown, Minus,
+  ChevronRight, ChevronDown,
   AlertTriangle, CheckCircle, Info, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -142,8 +142,6 @@ function ForecastRow({
   // Compute annual totals
   const annualBudget = row.cells.reduce((s, c) => s + c.budget, 0);
   const annualForecast = row.cells.reduce((s, c) => s + c.forecast, 0);
-  const annualRealized = row.cells.reduce((s, c) => s + (c.realized ?? 0), 0);
-
   const rowClasses = cn(
     'group border-b transition-colors hover:bg-muted/30',
     isTotal && 'font-semibold bg-muted/20',
@@ -188,7 +186,6 @@ function ForecastRow({
       {/* Monthly cells */}
       {row.cells.map((cell, mi) => {
         const isPast = mi + 1 < currentMonth;
-        const isCurrent = mi + 1 === currentMonth;
         const vPB = variance(cell.forecast, cell.budget);
 
         return (

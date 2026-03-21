@@ -43,14 +43,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -469,7 +461,7 @@ export function OpeningBalanceWizard({
                 Saisissez les soldes comptables et bancaires pour chaque compte. L'écart et le solde disponible sont calculés automatiquement.
               </p>
 
-              {bankBalances.map((bb, idx) => {
+              {bankBalances.map((bb) => {
                 const account = bankAccounts.find((a) => a.id === bb.account_id);
                 const accountLabel = account
                   ? `${account.bank_name} - ${account.account_name}`
@@ -1065,7 +1057,6 @@ export function OpeningBalanceWizard({
 
               <div className="space-y-4">
                 {approvalSteps.map((as, idx) => {
-                  const isFirst = idx === 0;
                   const prevApproved = idx === 0 || approvalSteps[idx - 1]?.status === 'approved';
                   const canAct = prevApproved && as.status === 'pending';
 

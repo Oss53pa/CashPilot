@@ -38,8 +38,8 @@ export function useUpdateConsolidationConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<ConsolidationConfig>) =>
-      consolidationService.updateConsolidationConfig(data),
+    mutationFn: ({ tenantId, data }: { tenantId: string; data: Partial<ConsolidationConfig> }) =>
+      consolidationService.updateConsolidationConfig(tenantId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consolidation', 'config'] });
     },

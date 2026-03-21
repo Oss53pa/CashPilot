@@ -42,12 +42,6 @@ const PRIORITY_LABELS: Record<PriorPayable['priority'], string> = {
   deferrable: 'Différable',
 };
 
-const PRIORITY_COLORS: Record<PriorPayable['priority'], string> = {
-  urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  normal: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  deferrable: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-};
-
 interface PayablesPortfolioProps {
   payables: PriorPayable[];
   onChange: (payables: PriorPayable[]) => void;

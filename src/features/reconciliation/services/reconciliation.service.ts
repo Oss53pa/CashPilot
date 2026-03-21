@@ -450,7 +450,7 @@ export const reconciliationService = {
     return data as ChatMessage;
   },
 
-  getSuggestedMatches(_itemId: string) {
+  getSuggestedMatches(_itemId: string): Array<{ flow_id: string; flow_label: string; match_type: string; confidence: number }> {
     // Suggested matches require AI/ML matching engine; returns empty until implemented
     return [];
   },

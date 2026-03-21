@@ -42,13 +42,6 @@ const STATUS_LABELS: Record<PriorReceivable['status'], string> = {
   irrecoverable: 'Irrécouvrable',
 };
 
-const STATUS_COLORS: Record<PriorReceivable['status'], string> = {
-  normal: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  late: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  disputed: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  litigation: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  irrecoverable: 'bg-red-200 text-red-900 dark:bg-red-950 dark:text-red-300',
-};
 
 interface ReceivablesPortfolioProps {
   receivables: PriorReceivable[];

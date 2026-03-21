@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Wallet, Target, BarChart3, RefreshCw,
-  Download, FileSpreadsheet, FileText, ChevronDown,
+  Download, FileSpreadsheet, FileText,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,

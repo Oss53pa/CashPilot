@@ -22,7 +22,7 @@ export default function ReceiptsPage() {
   const [editingReceivable, setEditingReceivable] = useState<ReceivableEntry | null>(null);
 
   const { data: flows = [] } = useCashFlows(companyId, 'receipt');
-  const { data: receivables = [] } = useReceivables(companyId);
+  useReceivables(companyId);
   const { data: summary, isLoading: summaryLoading } = useMonthlySummary(
     companyId,
     'receipt',

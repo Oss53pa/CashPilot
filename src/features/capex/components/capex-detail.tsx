@@ -5,7 +5,6 @@ import {
   FileText,
   AlertTriangle,
   ArrowRight,
-  X,
 } from 'lucide-react';
 
 import {
@@ -15,7 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';

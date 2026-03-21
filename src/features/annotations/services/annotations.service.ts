@@ -130,13 +130,15 @@ export const annotationsService = {
 
     // Update parent replies_count
     if (data.parent_id) {
-      await supabase.rpc('increment_annotation_replies', { annotation_id: data.parent_id }).catch(() => {
-        // If RPC doesn't exist, try manual update
-        supabase
-          .from('annotations')
-          .update({ replies_count: supabase.rpc ? undefined : 0 })
-          .eq('id', data.parent_id!)
-          .then(() => {});
+      await supabase.rpc('increment_annotation_replies', { annotation_id: data.parent_id }).then(({ error: rpcError }) => {
+        if (rpcError) {
+          // If RPC doesn't exist, try manual update
+          supabase
+            .from('annotations')
+            .update({ replies_count: 0 })
+            .eq('id', data.parent_id!)
+            .then(() => {});
+        }
       });
     }
 

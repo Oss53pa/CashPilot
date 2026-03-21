@@ -6,7 +6,7 @@ import type { GrangerCausalityResult } from './causal-types';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function pValueBadge(pValue: number, isSignificant: boolean) {
+function pValueBadge(pValue: number, _isSignificant: boolean) {
   if (pValue < 0.01) return <Badge variant="success" className="text-xs">p &lt; 0.01</Badge>;
   if (pValue < 0.05) return <Badge variant="success" className="text-xs">p &lt; 0.05</Badge>;
   if (pValue < 0.1) return <Badge variant="warning" className="text-xs">p &lt; 0.10</Badge>;

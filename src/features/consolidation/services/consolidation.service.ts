@@ -110,7 +110,7 @@ export const consolidationService = {
     };
   },
 
-  async getInterCompanyFlows(tenantId: string): Promise<InterCompanyFlow[]> {
+  async getInterCompanyFlows(_tenantId: string): Promise<InterCompanyFlow[]> {
     const { data, error } = await supabase
       .from('internal_transfers')
       .select(`

@@ -102,7 +102,6 @@ const INDEXATION_LABELS: Record<string, string> = {
 };
 
 export function PaymentProfileCard({
-  counterparty,
   profile,
   lease,
   coldStart,

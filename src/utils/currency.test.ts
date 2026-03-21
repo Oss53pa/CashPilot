@@ -37,18 +37,21 @@ describe('formatFCFA', () => {
   });
 
   it('compact format for thousands', () => {
-    const result = formatFCFA(500000_00, { compact: true });
-    expect(result).toBe('5000 K FCFA');
+    // 500_000 centimes = 5,000 FCFA = 5 K
+    const result = formatFCFA(500_000, { compact: true });
+    expect(result).toBe('5 K FCFA');
   });
 
   it('compact format for millions', () => {
-    const result = formatFCFA(250000000_00, { compact: true });
-    expect(result).toBe('2500.0 M FCFA');
+    // 250_000_000 centimes = 2,500,000 FCFA = 2.5 M
+    const result = formatFCFA(250_000_000, { compact: true });
+    expect(result).toBe('2.5 M FCFA');
   });
 
   it('compact format for billions', () => {
-    const result = formatFCFA(500000000000_00, { compact: true });
-    expect(result).toBe('5000.0 Mrd FCFA');
+    // 500_000_000_000 centimes = 5,000,000,000 FCFA = 5.0 Mrd
+    const result = formatFCFA(500_000_000_000, { compact: true });
+    expect(result).toBe('5.0 Mrd FCFA');
   });
 
   it('compact format for small amounts falls through to normal', () => {
@@ -73,8 +76,9 @@ describe('formatFCFA', () => {
   });
 
   it('negative with compact for millions', () => {
-    const result = formatFCFA(-150000000_00, { compact: true });
-    expect(result).toBe('-1500.0 M FCFA');
+    // -150_000_000 centimes = -1,500,000 FCFA = -1.5 M
+    const result = formatFCFA(-150_000_000, { compact: true });
+    expect(result).toBe('-1.5 M FCFA');
   });
 });
 

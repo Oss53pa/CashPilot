@@ -5,11 +5,9 @@ import {
   Flag,
   AlertTriangle,
   AtSign,
-  CheckCircle2,
   Filter,
 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,11 +19,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import {
   useAnnotations,
   useAnnotationStats,
-  useSearchAnnotations,
 } from '../hooks/use-annotations';
 import { AnnotationThread } from '../components/annotation-thread';
 import { AnnotationPanel } from '../components/annotation-panel';

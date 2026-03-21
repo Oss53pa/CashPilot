@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import {
-  Users, Bell, UserPlus, DoorOpen, FileCheck, Gift, TrendingUp,
-  Building, AlertTriangle, CheckCircle, Clock, Send, ChevronRight,
-  Calendar, Home,
+  Bell, UserPlus, DoorOpen, Gift, TrendingUp,
+  Send,
+  Home,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';

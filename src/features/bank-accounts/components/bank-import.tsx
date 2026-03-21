@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Upload, FileText, CheckCircle2, AlertTriangle, XCircle, Loader2, Download, Settings2 } from 'lucide-react';
 
 import {
@@ -81,7 +81,6 @@ export function BankImport({
   bankName,
   currency = 'XOF',
 }: BankImportProps) {
-  const { t } = useTranslation();
   const importMutation = useImportStatement();
 
   const [selectedFormat, setSelectedFormat] = useState<ImportFormat>('mt940');
@@ -104,9 +103,13 @@ export function BankImport({
     date: 0, value_date: 1, description: 2, reference: 3, counterparty: 4, amount: 5, balance: 6,
   });
 
-  const bankFormats = bankAccountsService.getBankFormats();
-  const bankConfig = bankFormats.find(
-    (b) => bankName?.toLowerCase().includes(b.bank_name.toLowerCase()),
+  const { data: bankFormats = [] } = useQuery({
+    queryKey: ['bank-formats'],
+    queryFn: () => bankAccountsService.getBankFormats(),
+  });
+  const bankConfig = useMemo(
+    () => bankFormats.find((b) => bankName?.toLowerCase().includes(b.bank_name.toLowerCase())),
+    [bankFormats, bankName],
   );
 
   const handleFileUpload = useCallback(

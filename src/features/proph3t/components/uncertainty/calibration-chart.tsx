@@ -1,6 +1,6 @@
 import {
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, Line, LineChart, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Line, LineChart, Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

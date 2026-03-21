@@ -2,7 +2,6 @@ import {
   Users,
   Phone,
   CircleDot,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
   Minus,

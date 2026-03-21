@@ -17,13 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import {
   useAnnotationsForEntity,
 } from '../hooks/use-annotations';
 import { AnnotationThread } from './annotation-thread';
 import { AnnotationComposer } from './annotation-composer';
-import type { EntityType, AnnotationType } from '../types';
+import type { EntityType } from '../types';
 
 interface AnnotationPanelProps {
   entityType: EntityType;

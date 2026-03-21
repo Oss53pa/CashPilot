@@ -72,21 +72,6 @@ function MatchStatusIcon({ status }: { status: BankTransaction['match_status'] }
   }
 }
 
-function MatchStatusBadge({ status }: { status: BankTransaction['match_status'] }) {
-  const variant =
-    status === 'matched'
-      ? 'success'
-      : status === 'probable'
-        ? 'default'
-        : 'destructive';
-
-  return (
-    <Badge variant={variant as 'default' | 'destructive'}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  );
-}
-
 function ConfidenceBar({ confidence }: { confidence: number }) {
   const pct = Math.round(confidence * 100);
   const color =

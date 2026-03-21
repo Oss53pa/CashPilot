@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/config/supabase';
 import {
   FileSpreadsheet, Save, Send, Download, GitCompare, X,
   ChevronDown, ChevronRight, Plus, Trash2, Calculator,
-  Check, Clock, AlertCircle, User, Building2, CalendarDays,
-  Banknote, BarChart3, Settings2, Shield, Layers,
+  Check, Clock, User, Building2, CalendarDays,
+  Banknote, Settings2, Shield, Layers,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,14 +43,7 @@ import {
   type DistributionRuleType,
   type BudgetCategory,
 } from '../types';
-import {
-  budgetService,
-  MOCK_COMPANIES,
-  MOCK_USERS,
-  MOCK_COST_CENTERS,
-  MOCK_BUDGETS_LIST,
-  MOCK_COUNTERPARTIES,
-} from '../services/budget.service';
+import { budgetService } from '../services/budget.service';
 import { BudgetImport } from './budget-import';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
@@ -110,13 +105,6 @@ function formatFCFA(centimes: number): string {
   return francs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-function parseFCFA(display: string): number {
-  const cleaned = display.replace(/\s/g, '').replace(/,/g, '');
-  const francs = parseInt(cleaned, 10);
-  if (isNaN(francs)) return 0;
-  return francs * 100;
-}
-
 function formatFCFADisplay(value: number): string {
   // value is in centimes, display as francs with space separators
   const francs = Math.round(value / 100);
@@ -158,13 +146,55 @@ interface BudgetFormProps {
 export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFormProps) {
   const currentYear = new Date().getFullYear();
 
+  // ─── Reference data queries ────────────────────────────────────────────
+  const { data: companies = [] } = useQuery({
+    queryKey: ['ref', 'companies'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('companies').select('id, name').eq('is_active', true).order('name');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: users = [] } = useQuery({
+    queryKey: ['ref', 'users'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, full_name').order('full_name');
+      if (error) throw error;
+      return (data ?? []).map((u: any) => ({ id: u.id, name: u.full_name ?? '' }));
+    },
+  });
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ['ref', 'cost_centers'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cost_centers').select('name').order('name');
+      if (error) throw error;
+      return (data ?? []).map((c: any) => c.name as string);
+    },
+  });
+  const { data: budgetsList = [] } = useQuery({
+    queryKey: ['ref', 'budgets_list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('budgets').select('id, name, fiscal_year').order('fiscal_year', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: counterpartiesList = [] } = useQuery({
+    queryKey: ['ref', 'counterparties_list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('counterparties').select('id, name').order('name');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // ─── Form state ──────────────────────────────────────────────────────────
 
   const form = useForm<BudgetHeaderInput>({
     resolver: zodResolver(budgetHeaderSchema),
     defaultValues: {
       name: '',
-      company_id: MOCK_COMPANIES[0].id,
+      company_id: '',
       fiscal_year: currentYear,
       start_date: `${currentYear}-01-01`,
       end_date: `${currentYear}-12-31`,
@@ -173,7 +203,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
       status: 'draft',
       budget_type: 'annual_fixed',
       scope: 'company',
-      responsible_id: MOCK_USERS[0].id,
+      responsible_id: '',
       notes: '',
     },
   });
@@ -189,9 +219,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
   });
 
   // Budget lines
-  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>(() =>
-    budgetService.getMockBudgetLines('new-budget')
-  );
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
 
   // Cost center
@@ -213,9 +241,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
   const [comparisonView, setComparisonView] = useState<ComparisonView>('simple');
 
   // Approval
-  const [approvalSteps, setApprovalSteps] = useState<BudgetApprovalStep[]>(
-    budgetService.getMockApprovalSteps()
-  );
+  const [approvalSteps, setApprovalSteps] = useState<BudgetApprovalStep[]>([]);
 
   // ─── Computed values ─────────────────────────────────────────────────────
 
@@ -503,7 +529,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {MOCK_COMPANIES.map((c) => (
+                                  {companies.map((c) => (
                                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -677,7 +703,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {MOCK_USERS.map((u) => (
+                                  {users.map((u) => (
                                     <SelectItem key={u.id} value={u.id}>
                                       <span className="flex items-center gap-2">
                                         <User className="h-3 w-3" /> {u.name}
@@ -772,7 +798,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
                               <SelectValue placeholder="Sélectionner un budget existant..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {MOCK_BUDGETS_LIST.map((b) => (
+                              {budgetsList.map((b) => (
                                 <SelectItem key={b.id} value={b.id}>
                                   {b.name} ({b.fiscal_year})
                                 </SelectItem>
@@ -912,7 +938,7 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
                           <div className="flex items-center gap-2">
                             <Label className="text-xs text-muted-foreground">Centres :</Label>
                             <div className="flex gap-1">
-                              {MOCK_COST_CENTERS.map((center) => (
+                              {costCenters.map((center) => (
                                 <Badge
                                   key={center}
                                   variant={costCenterConfig.centers.includes(center) ? 'default' : 'outline'}
@@ -995,6 +1021,8 @@ export function BudgetForm({ open, onOpenChange, onSubmit, isPending }: BudgetFo
                                 onRemoveSubLine={removeSubLine}
                                 onApplyDistribution={applyDistributionToLine}
                                 costCenterEnabled={costCenterConfig.enabled}
+                                counterpartiesList={counterpartiesList}
+                                costCenters={costCenters}
                               />
                             );
                           })}
@@ -1611,6 +1639,8 @@ interface BudgetGroupRowsProps {
   onRemoveSubLine: (parentId: string, childId: string) => void;
   onApplyDistribution: (lineId: string, rule: DistributionRuleType) => void;
   costCenterEnabled: boolean;
+  counterpartiesList: Array<{ id: string; name: string }>;
+  costCenters: string[];
 }
 
 function BudgetGroupRows({
@@ -1623,6 +1653,8 @@ function BudgetGroupRows({
   onRemoveSubLine,
   onApplyDistribution,
   costCenterEnabled,
+  counterpartiesList,
+  costCenters,
 }: BudgetGroupRowsProps) {
   const varianceColor = (v: number | undefined) => {
     if (!v) return '';
@@ -1702,7 +1734,7 @@ function BudgetGroupRows({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Aucune</SelectItem>
-                {MOCK_COUNTERPARTIES.map((cp) => (
+                {counterpartiesList.map((cp) => (
                   <SelectItem key={cp.id} value={cp.id}>{cp.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -1718,7 +1750,7 @@ function BudgetGroupRows({
                   <SelectValue placeholder="—" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MOCK_COST_CENTERS.map((cc) => (
+                  {costCenters.map((cc) => (
                     <SelectItem key={cc} value={cc}>{cc}</SelectItem>
                   ))}
                 </SelectContent>

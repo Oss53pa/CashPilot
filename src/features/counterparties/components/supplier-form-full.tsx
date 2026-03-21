@@ -39,7 +39,6 @@ import {
 import type {
   SupplierIdentity,
   SupplierReferencing,
-  SupplierReferencingDocument,
   SupplierContract,
   SupplierBankAccount,
   SupplierScorecard,

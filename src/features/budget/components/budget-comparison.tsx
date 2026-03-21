@@ -28,11 +28,6 @@ import {
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCompareBudgetVersions } from '../hooks/use-budget';
 
-const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
 interface BudgetOption {
   id: string;
   name: string;

@@ -52,7 +52,7 @@ function SlippageIndicator({ dueDate }: { dueDate: string }) {
   );
 }
 
-export function PaymentSchedule({ payments, currency, totalBudget }: PaymentScheduleProps) {
+export function PaymentSchedule({ payments, currency }: PaymentScheduleProps) {
   const { t } = useTranslation();
 
   const totalPaid = payments

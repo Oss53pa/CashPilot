@@ -5,8 +5,6 @@ import type {
   BudgetUpdateInput,
   BudgetLineInput,
   BudgetImportData,
-  BudgetHeaderInput,
-  BudgetSimulation,
 } from '../types';
 
 export function useBudgets(companyId: string) {
@@ -121,9 +119,10 @@ export function useSimulateBudget() {
   };
 }
 
-export function useBudgetMockData() {
-  return {
-    getMockLines: budgetService.getMockBudgetLines,
-    getMockApprovalSteps: budgetService.getMockApprovalSteps,
-  };
+export function useBudgetApprovalSteps(budgetId: string) {
+  return useQuery({
+    queryKey: ['budgets', 'approval-steps', budgetId],
+    queryFn: () => budgetService.getApprovalSteps(budgetId),
+    enabled: !!budgetId,
+  });
 }

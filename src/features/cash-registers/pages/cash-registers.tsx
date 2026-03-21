@@ -35,7 +35,7 @@ export default function CashRegistersPage() {
   const currentCompany = useCompanyStore((s) => s.currentCompany);
   const companyId = currentCompany?.id;
 
-  const [activeTab, setActiveTab] = useState<string>('cash');
+  const [activeTab, setActiveTab] = useState<'cash' | 'mobile_money'>('cash');
 
   const { data: cashRegisters = [], isLoading: cashLoading } = useCashRegisters(companyId, 'cash');
   const { data: mobileMoneyAccounts = [], isLoading: mobileLoading } = useCashRegisters(companyId, 'mobile_money');
@@ -152,7 +152,7 @@ export default function CashRegistersPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'cash' | 'mobile_money')}>
         <TabsList>
           <TabsTrigger value="cash">
             {t('cashRegisters.cashTab', 'Caisse')} ({cashRegisters.length})

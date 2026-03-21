@@ -51,7 +51,7 @@ export default function PaymentWorkflowsPage() {
   // Queries
   const { data: allRequests = [] } = usePaymentRequests(companyId);
   const { data: allRequestsWithChain = [] } = usePaymentRequestsWithChain(companyId);
-  const { data: myRequests = [] } = useMyPaymentRequests(companyId, userId);
+  useMyPaymentRequests(companyId, userId);
   const { data: pendingApprovals = [] } = usePendingApprovals(userId, userRole);
   const { data: doaRules = [] } = useDOARules(companyId);
   const { data: overdueApprovals = [] } = useOverdueApprovals(companyId);
@@ -67,20 +67,6 @@ export default function PaymentWorkflowsPage() {
   const updateDOARule = useUpdateDOARule();
   const deleteDOARule = useDeleteDOARule();
   const escalatePayment = useEscalatePayment();
-
-  // Columns for My Requests
-  const myColumns = useMemo(
-    () =>
-      getPaymentColumns({
-        counterparties: [],
-        onEdit: (req) => {
-          setEditingRequest(req);
-          setFormOpen(true);
-        },
-        onDelete: (id) => deleteRequest.mutate(id),
-      }),
-    [deleteRequest],
-  );
 
   // Columns for Pending Approval (with approval actions)
   const approvalColumns = useMemo(

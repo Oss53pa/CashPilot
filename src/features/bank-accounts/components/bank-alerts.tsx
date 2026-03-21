@@ -39,7 +39,7 @@ import {
   useDeleteAlertRule,
   useActiveAlerts,
 } from '../hooks/use-bank-accounts';
-import type { AlertRule, AlertRuleType, ActiveAlert } from '../types';
+import type { AlertRule, AlertRuleType } from '../types';
 
 interface BankAlertsProps {
   accountId: string;

@@ -1,10 +1,13 @@
+import { HelpPanel, type HelpConfig } from './help-panel';
+
 interface PageHeaderProps {
   title: string;
   description?: string;
   children?: React.ReactNode;
+  helpConfig?: HelpConfig;
 }
 
-export function PageHeader({ title, description, children }: PageHeaderProps) {
+export function PageHeader({ title, description, children, helpConfig }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -13,7 +16,10 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
           <p className="text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      <div className="flex items-center gap-2">
+        {children}
+        {helpConfig && <HelpPanel config={helpConfig} />}
+      </div>
     </div>
   );
 }
