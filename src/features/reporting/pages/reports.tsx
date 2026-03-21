@@ -41,6 +41,7 @@ import { FiscalReport } from '../components/reports/fiscal-report';
 import { TreasuryWeeklyReport } from '../components/reports/treasury-weekly-report';
 import { TFTReport } from '../components/reports/tft-report';
 import { Rolling12MonthReport } from '../components/reports/rolling-12-month-report';
+import { AgedPayablesReport } from '../components/reports/aged-payables-report';
 
 // ---------------------------------------------------------------------------
 // Report definitions grouped by category
@@ -50,7 +51,7 @@ type ReportType =
   | 'cash-position' | 'cash-flow' | 'budget-variance' | 'forecast-accuracy'
   | 'aging' | 'bank-reconciliation' | 'collection' | 'dispute'
   | 'multi-bank' | 'capex' | 'fiscal' | 'treasury-weekly'
-  | 'tft' | 'rolling-12';
+  | 'tft' | 'rolling-12' | 'aged-payables';
 
 interface ReportDef {
   type: ReportType;
@@ -85,7 +86,8 @@ const REPORT_GROUPS: ReportGroup[] = [
   {
     category: 'Creances & Recouvrement',
     reports: [
-      { type: 'aging', label: 'Balance agee', description: 'Creances par anciennete', icon: Clock },
+      { type: 'aging', label: 'Balance agee creances', description: 'Creances par anciennete et par zone', icon: Clock },
+      { type: 'aged-payables', label: 'Balance agee dettes', description: 'Dettes par nature et par fournisseur', icon: Clock },
       { type: 'collection', label: 'Recouvrement', description: 'Taux, DSO, performance par locataire', icon: Receipt },
       { type: 'dispute', label: 'Contentieux', description: 'Dossiers actifs, provisions, audiences', icon: Gavel },
     ],
@@ -166,6 +168,7 @@ export default function ReportsPage() {
       case 'cash-flow': return <CashFlowReport />;
       case 'budget-variance': return <BudgetVarianceReport />;
       case 'aging': return <AgedReceivablesReport />;
+      case 'aged-payables': return <AgedPayablesReport />;
       case 'collection': return <CollectionReport />;
       case 'dispute': return <DisputeReport />;
       case 'multi-bank': return <MultiBankReport />;
