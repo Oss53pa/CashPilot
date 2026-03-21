@@ -24,6 +24,7 @@ import {
   Menu,
   X,
   type LucideIcon,
+  BarChart3,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app.store';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -62,6 +63,7 @@ const iconMap: Record<string, LucideIcon> = {
   ClipboardList,
   Settings,
   HelpCircle,
+  BarChart3,
 };
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,7 @@ const SIDEBAR_SECTIONS: NavSection[] = [
       { labelKey: 'Encaissements', icon: 'ArrowDownToLine', path: '/receipts' },
       { labelKey: 'Decaissements', icon: 'ArrowUpFromLine', path: '/disbursements' },
       { labelKey: 'Previsions', icon: 'TrendingUp', path: '/forecast' },
+      { labelKey: 'Tableau annuel', icon: 'BarChart3', path: '/forecast/annual' },
     ],
   },
   {

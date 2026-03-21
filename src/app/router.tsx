@@ -36,6 +36,7 @@ const DashboardPage = lazy(() => import('@/features/dashboard/pages/dashboard'))
 const ReceiptsPage = lazy(() => import('@/features/cashflow/pages/receipts'));
 const DisbursementsPage = lazy(() => import('@/features/cashflow/pages/disbursements'));
 const ForecastPage = lazy(() => import('@/features/forecast/pages/forecast'));
+const AnnualForecastPage = lazy(() => import('@/features/forecast/pages/annual-forecast'));
 
 // Accounts
 const BankAccountsPage = lazy(() => import('@/features/bank-accounts/pages/bank-accounts'));
@@ -105,6 +106,7 @@ export const router = createBrowserRouter([
       { path: 'receipts', element: <SuspenseWrapper><ReceiptsPage /></SuspenseWrapper> },
       { path: 'disbursements', element: <SuspenseWrapper><DisbursementsPage /></SuspenseWrapper> },
       { path: 'forecast', element: <SuspenseWrapper><ForecastPage /></SuspenseWrapper> },
+      { path: 'forecast/annual', element: <SuspenseWrapper><AnnualForecastPage /></SuspenseWrapper> },
       // Accounts
       { path: 'accounts', element: <SuspenseWrapper><BankAccountsPage /></SuspenseWrapper> },
       { path: 'accounts/:id', element: <SuspenseWrapper><BankAccountDetailPage /></SuspenseWrapper> },
