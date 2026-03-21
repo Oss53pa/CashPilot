@@ -39,6 +39,8 @@ import { MultiBankReport } from '../components/reports/multi-bank-report';
 import { CapexReport } from '../components/reports/capex-report';
 import { FiscalReport } from '../components/reports/fiscal-report';
 import { TreasuryWeeklyReport } from '../components/reports/treasury-weekly-report';
+import { TFTReport } from '../components/reports/tft-report';
+import { Rolling12MonthReport } from '../components/reports/rolling-12-month-report';
 
 // ---------------------------------------------------------------------------
 // Report definitions grouped by category
@@ -47,7 +49,8 @@ import { TreasuryWeeklyReport } from '../components/reports/treasury-weekly-repo
 type ReportType =
   | 'cash-position' | 'cash-flow' | 'budget-variance' | 'forecast-accuracy'
   | 'aging' | 'bank-reconciliation' | 'collection' | 'dispute'
-  | 'multi-bank' | 'capex' | 'fiscal' | 'treasury-weekly';
+  | 'multi-bank' | 'capex' | 'fiscal' | 'treasury-weekly'
+  | 'tft' | 'rolling-12';
 
 interface ReportDef {
   type: ReportType;
@@ -68,6 +71,8 @@ const REPORT_GROUPS: ReportGroup[] = [
       { type: 'cash-position', label: 'Position de tresorerie', description: 'Soldes par compte en temps reel', icon: Wallet },
       { type: 'cash-flow', label: 'Flux de tresorerie', description: 'Encaissements et decaissements', icon: ArrowLeftRight },
       { type: 'treasury-weekly', label: 'Plan 13 semaines', description: 'Prevision glissante hebdomadaire', icon: BarChart3 },
+      { type: 'tft', label: 'TFT (SYSCOHADA)', description: 'Tableau de Flux de Tresorerie — methode directe', icon: ArrowLeftRight },
+      { type: 'rolling-12', label: '12 mois glissants', description: 'Prevision glissante sur 12 mois', icon: BarChart3 },
     ],
   },
   {
@@ -167,6 +172,8 @@ export default function ReportsPage() {
       case 'capex': return <CapexReport />;
       case 'fiscal': return <FiscalReport />;
       case 'treasury-weekly': return <TreasuryWeeklyReport />;
+      case 'tft': return <TFTReport />;
+      case 'rolling-12': return <Rolling12MonthReport />;
       case 'forecast-accuracy':
       case 'bank-reconciliation':
         return (
