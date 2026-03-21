@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, FileSpreadsheet, ArrowRight, Check } from 'lucide-react';
+import { Upload, FileSpreadsheet, ArrowRight, Check, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,6 +126,20 @@ export function BudgetImport({ onImport, isPending }: BudgetImportProps) {
         {/* Step 1: Upload */}
         {step === 'upload' && (
           <div className="space-y-4">
+            {/* Template download */}
+            <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+              <div>
+                <p className="text-sm font-medium">Template CashPilot</p>
+                <p className="text-xs text-muted-foreground">Telechargez le modele Excel pre-formate avec les categories CashPilot</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => {
+                import('@/lib/import-templates').then(m => m.downloadBudgetTemplate());
+              }}>
+                <Download className="h-4 w-4 mr-2" />
+                Telecharger
+              </Button>
+            </div>
+
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center">
               <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
               <p className="mb-2 text-sm text-muted-foreground">

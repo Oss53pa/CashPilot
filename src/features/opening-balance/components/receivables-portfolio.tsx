@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Upload, AlertTriangle, ChevronDown, ChevronUp, Scale } from 'lucide-react';
+import { Plus, Trash2, Upload, Download, AlertTriangle, ChevronDown, ChevronUp, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -171,7 +171,15 @@ export function ReceivablesPortfolio({ receivables, onChange }: ReceivablesPortf
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Portefeuille des créances antérieures</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Portefeuille des creances anterieures</h3>
+        <Button variant="outline" size="sm" onClick={() => {
+          import('@/lib/import-templates').then(m => m.downloadReceivablesTemplate());
+        }}>
+          <Download className="h-4 w-4 mr-2" />
+          Template Excel
+        </Button>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
