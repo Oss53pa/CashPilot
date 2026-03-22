@@ -1,39 +1,39 @@
-import { AlertTriangle, Users, Gavel, Building2, ShieldAlert } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import type { RiskSummary } from '../types';
+import {
+  AlertTriangle,
+  Users,
+  Gavel,
+  Building2,
+  ShieldAlert,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { RiskSummary } from "../types";
+import { formatFrancs } from "@/utils/currency";
 
 interface RiskRowProps {
   riskSummary: RiskSummary;
-}
-
-function formatFCFA(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M FCFA`;
-  }
-  return `${(value / 1_000).toFixed(0)}K FCFA`;
 }
 
 export function RiskRow({ riskSummary }: RiskRowProps) {
   const items = [
     {
       icon: Users,
-      label: 'Locataires à risque',
-      detail: `${riskSummary.tenants_at_risk.count} locataires — ${formatFCFA(riskSummary.tenants_at_risk.monthly_amount)}/mois`,
-      severity: 'high' as const,
+      label: "Locataires à risque",
+      detail: `${riskSummary.tenants_at_risk.count} locataires — ${formatFrancs(riskSummary.tenants_at_risk.monthly_amount, { compact: true })}/mois`,
+      severity: "high" as const,
     },
     {
       icon: Gavel,
-      label: 'Contentieux attendus',
-      detail: formatFCFA(riskSummary.disputes_expected),
-      severity: 'medium' as const,
+      label: "Contentieux attendus",
+      detail: formatFrancs(riskSummary.disputes_expected, { compact: true }),
+      severity: "medium" as const,
     },
     ...(riskSummary.capex_underfunded
       ? [
           {
             icon: Building2,
-            label: 'CAPEX sous-financé',
-            detail: `${formatFCFA(riskSummary.capex_underfunded.amount)} au ${new Date(riskSummary.capex_underfunded.date).toLocaleDateString('fr-FR')}`,
-            severity: 'high' as const,
+            label: "CAPEX sous-financé",
+            detail: `${formatFrancs(riskSummary.capex_underfunded.amount, { compact: true })} au ${new Date(riskSummary.capex_underfunded.date).toLocaleDateString("fr-FR")}`,
+            severity: "high" as const,
           },
         ]
       : []),
@@ -43,24 +43,25 @@ export function RiskRow({ riskSummary }: RiskRowProps) {
             icon: ShieldAlert,
             label: riskSummary.covenant_watch.name,
             detail: `${riskSummary.covenant_watch.current.toFixed(2)}x (min ${riskSummary.covenant_watch.minimum.toFixed(2)}x)`,
-            severity: (riskSummary.covenant_watch.current <= riskSummary.covenant_watch.minimum * 1.1
-              ? 'high'
-              : 'low') as 'high' | 'medium' | 'low',
+            severity: (riskSummary.covenant_watch.current <=
+            riskSummary.covenant_watch.minimum * 1.1
+              ? "high"
+              : "low") as "high" | "medium" | "low",
           },
         ]
       : []),
   ];
 
   const severityBadge = {
-    high: 'destructive' as const,
-    medium: 'default' as const,
-    low: 'secondary' as const,
+    high: "destructive" as const,
+    medium: "default" as const,
+    low: "secondary" as const,
   };
 
   const severityLabel = {
-    high: 'Élevé',
-    medium: 'Moyen',
-    low: 'Faible',
+    high: "Élevé",
+    medium: "Moyen",
+    low: "Faible",
   };
 
   return (
@@ -84,8 +85,13 @@ export function RiskRow({ riskSummary }: RiskRowProps) {
               <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium truncate">{item.label}</span>
-                  <Badge variant={severityBadge[item.severity]} className="text-[10px] px-1.5 py-0">
+                  <span className="text-xs font-medium truncate">
+                    {item.label}
+                  </span>
+                  <Badge
+                    variant={severityBadge[item.severity]}
+                    className="text-[10px] px-1.5 py-0"
+                  >
                     {severityLabel[item.severity]}
                   </Badge>
                 </div>

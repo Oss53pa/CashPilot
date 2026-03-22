@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { ForecastColumn, ForecastRow } from '../types';
+import { useState } from "react";
+import { ChevronRight, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { ForecastColumn, ForecastRow } from "../types";
+import { formatFrancs } from "@/utils/currency";
 
 interface ForecastGridProps {
   title: string;
@@ -10,32 +11,27 @@ interface ForecastGridProps {
   showConfidence: boolean;
 }
 
-function formatFCFA(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (Math.abs(value) >= 1_000) {
-    return `${(value / 1_000).toFixed(0)}K`;
-  }
-  return value.toLocaleString('fr-FR');
-}
-
 function confidenceColor(pct: number): string {
-  if (pct >= 95) return 'bg-green-500';
-  if (pct >= 80) return 'bg-blue-500';
-  if (pct >= 65) return 'bg-orange-400';
-  return 'bg-gray-400';
+  if (pct >= 95) return "bg-green-500";
+  if (pct >= 80) return "bg-blue-500";
+  if (pct >= 65) return "bg-orange-400";
+  return "bg-gray-400";
 }
 
 function columnBgClass(col: ForecastColumn): string {
-  if (col.is_past) return 'bg-white dark:bg-zinc-900';
-  if (col.is_current) return 'bg-blue-50 dark:bg-blue-950/30';
-  if (col.confidence_pct >= 90) return 'bg-gray-50/50 dark:bg-zinc-800/30';
-  if (col.confidence_pct >= 80) return 'bg-gray-100/50 dark:bg-zinc-800/50';
-  return 'bg-gray-100 dark:bg-zinc-800/70';
+  if (col.is_past) return "bg-white dark:bg-zinc-900";
+  if (col.is_current) return "bg-blue-50 dark:bg-blue-950/30";
+  if (col.confidence_pct >= 90) return "bg-gray-50/50 dark:bg-zinc-800/30";
+  if (col.confidence_pct >= 80) return "bg-gray-100/50 dark:bg-zinc-800/50";
+  return "bg-gray-100 dark:bg-zinc-800/70";
 }
 
-export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastGridProps) {
+export function ForecastGrid({
+  title,
+  columns,
+  rows,
+  showConfidence,
+}: ForecastGridProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggleExpand(code: string) {
@@ -62,7 +58,9 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
       if (!row.parent_code) return false;
       const parent = rows.find((r) => r.code === row.parent_code);
       if (!parent) return false;
-      const grandparentExpanded = parent.parent_code ? expanded.has(parent.parent_code) : true;
+      const grandparentExpanded = parent.parent_code
+        ? expanded.has(parent.parent_code)
+        : true;
       return expanded.has(row.parent_code) && grandparentExpanded;
     }
     return false;
@@ -84,7 +82,7 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                 <th
                   key={col.key}
                   className={cn(
-                    'px-2 py-2 text-right font-medium min-w-[100px]',
+                    "px-2 py-2 text-right font-medium min-w-[100px]",
                     columnBgClass(col),
                   )}
                 >
@@ -104,17 +102,17 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
               <tr
                 key={row.code}
                 className={cn(
-                  'border-b last:border-b-0 transition-colors',
-                  row.is_total && 'bg-muted/30 border-t-2',
-                  row.level === 1 && 'bg-muted/10',
+                  "border-b last:border-b-0 transition-colors",
+                  row.is_total && "bg-muted/30 border-t-2",
+                  row.level === 1 && "bg-muted/10",
                 )}
               >
                 {/* Label cell */}
                 <td
                   className={cn(
-                    'sticky left-0 z-10 bg-card px-3 py-1.5 whitespace-nowrap',
-                    row.is_total && 'font-bold bg-muted/30',
-                    row.level === 1 && 'bg-muted/10',
+                    "sticky left-0 z-10 bg-card px-3 py-1.5 whitespace-nowrap",
+                    row.is_total && "font-bold bg-muted/30",
+                    row.level === 1 && "bg-muted/10",
                   )}
                   style={{ paddingLeft: `${12 + row.level * 16}px` }}
                 >
@@ -132,7 +130,7 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                         )}
                       </button>
                     )}
-                    <span className={cn(row.is_total && 'font-bold')}>
+                    <span className={cn(row.is_total && "font-bold")}>
                       {row.label}
                     </span>
                   </div>
@@ -143,7 +141,13 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                   const c = row.cells[col.key];
                   if (!c) {
                     return (
-                      <td key={col.key} className={cn('px-2 py-1.5 text-right', columnBgClass(col))}>
+                      <td
+                        key={col.key}
+                        className={cn(
+                          "px-2 py-1.5 text-right",
+                          columnBgClass(col),
+                        )}
+                      >
                         -
                       </td>
                     );
@@ -152,17 +156,32 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                     <td
                       key={col.key}
                       className={cn(
-                        'px-2 py-1.5 text-right tabular-nums',
+                        "px-2 py-1.5 text-right tabular-nums",
                         columnBgClass(col),
-                        row.is_total && 'font-bold',
+                        row.is_total && "font-bold",
                       )}
                     >
-                      <div>{formatFCFA(c.forecast)}</div>
-                      {showConfidence && c.low_80 !== undefined && c.high_80 !== undefined && (
-                        <div className="text-[9px] text-muted-foreground">
-                          {formatFCFA(c.low_80)} – {formatFCFA(c.high_80)}
-                        </div>
-                      )}
+                      <div>
+                        {formatFrancs(c.forecast, {
+                          compact: true,
+                          suffix: false,
+                        })}
+                      </div>
+                      {showConfidence &&
+                        c.low_80 !== undefined &&
+                        c.high_80 !== undefined && (
+                          <div className="text-[9px] text-muted-foreground">
+                            {formatFrancs(c.low_80, {
+                              compact: true,
+                              suffix: false,
+                            })}{" "}
+                            –{" "}
+                            {formatFrancs(c.high_80, {
+                              compact: true,
+                              suffix: false,
+                            })}
+                          </div>
+                        )}
                     </td>
                   );
                 })}
@@ -170,11 +189,14 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                 {/* Total cell */}
                 <td
                   className={cn(
-                    'px-2 py-1.5 text-right tabular-nums font-semibold bg-muted/20',
-                    row.is_total && 'font-bold',
+                    "px-2 py-1.5 text-right tabular-nums font-semibold bg-muted/20",
+                    row.is_total && "font-bold",
                   )}
                 >
-                  {formatFCFA(row.total.forecast)}
+                  {formatFrancs(row.total.forecast, {
+                    compact: true,
+                    suffix: false,
+                  })}
                 </td>
               </tr>
             ))}
@@ -190,7 +212,10 @@ export function ForecastGrid({ title, columns, rows, showConfidence }: ForecastG
                 <td key={col.key} className="px-2 py-1.5">
                   <div className="flex items-center justify-end gap-1">
                     <div
-                      className={cn('h-1.5 rounded-full', confidenceColor(col.confidence_pct))}
+                      className={cn(
+                        "h-1.5 rounded-full",
+                        confidenceColor(col.confidence_pct),
+                      )}
                       style={{ width: `${col.confidence_pct * 0.6}px` }}
                     />
                     <span className="text-[10px] text-muted-foreground tabular-nums">

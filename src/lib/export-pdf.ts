@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { formatFrancs } from "@/utils/currency";
 
 // ============================================================================
 // PDF Export Utility for CashPilot Reports
@@ -10,7 +11,7 @@ interface PdfOptions {
   subtitle?: string;
   company?: string;
   date?: string;
-  orientation?: 'portrait' | 'landscape';
+  orientation?: "portrait" | "landscape";
 }
 
 interface TableData {
@@ -29,12 +30,12 @@ interface SectionData {
  */
 export function generatePdf(
   options: PdfOptions,
-  sections: SectionData[]
+  sections: SectionData[],
 ): void {
   const doc = new jsPDF({
-    orientation: options.orientation || 'portrait',
-    unit: 'mm',
-    format: 'a4',
+    orientation: options.orientation || "portrait",
+    unit: "mm",
+    format: "a4",
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -43,22 +44,22 @@ export function generatePdf(
 
   // ---- HEADER ----
   doc.setFillColor(23, 23, 23); // #171717
-  doc.rect(0, 0, pageWidth, 35, 'F');
+  doc.rect(0, 0, pageWidth, 35, "F");
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CashPilot', margin, 15);
+  doc.setFont("helvetica", "bold");
+  doc.text("CashPilot", margin, 15);
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont("helvetica", "normal");
   doc.text(options.title, margin, 23);
 
   if (options.company) {
-    doc.text(options.company, pageWidth - margin, 15, { align: 'right' });
+    doc.text(options.company, pageWidth - margin, 15, { align: "right" });
   }
   if (options.date) {
-    doc.text(options.date, pageWidth - margin, 23, { align: 'right' });
+    doc.text(options.date, pageWidth - margin, 23, { align: "right" });
   }
   if (options.subtitle) {
     doc.text(options.subtitle, margin, 30);
@@ -77,7 +78,7 @@ export function generatePdf(
     // Section title
     doc.setTextColor(23, 23, 23);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont("helvetica", "bold");
     doc.text(section.title, margin, y);
     y += 2;
 
@@ -89,10 +90,13 @@ export function generatePdf(
     // Section content (text)
     if (section.content) {
       doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont("helvetica", "normal");
       doc.setTextColor(55, 65, 81); // #374151
 
-      const lines = doc.splitTextToSize(section.content, pageWidth - margin * 2);
+      const lines = doc.splitTextToSize(
+        section.content,
+        pageWidth - margin * 2,
+      );
       for (const line of lines) {
         if (y > doc.internal.pageSize.getHeight() - 20) {
           doc.addPage();
@@ -109,7 +113,7 @@ export function generatePdf(
       autoTable(doc, {
         startY: y,
         head: [section.table.headers],
-        body: section.table.rows.map(row => row.map(String)),
+        body: section.table.rows.map((row) => row.map(String)),
         margin: { left: margin, right: margin },
         styles: {
           fontSize: 8,
@@ -121,7 +125,7 @@ export function generatePdf(
         headStyles: {
           fillColor: [243, 244, 246], // #f3f4f6
           textColor: [17, 24, 39],
-          fontStyle: 'bold',
+          fontStyle: "bold",
           lineWidth: 0.1,
         },
         alternateRowStyles: {
@@ -133,7 +137,9 @@ export function generatePdf(
         },
       });
 
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY + 10 || y + 20;
+      y =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+          ?.finalY + 10 || y + 20;
     }
 
     y += 4;
@@ -143,7 +149,7 @@ export function generatePdf(
   addFooter(doc);
 
   // ---- SAVE ----
-  const fileName = `${options.title.replace(/[^a-zA-Z0-9]/g, '_')}_${options.date || new Date().toISOString().split('T')[0]}.pdf`;
+  const fileName = `${options.title.replace(/[^a-zA-Z0-9]/g, "_")}_${options.date || new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(fileName);
 }
 
@@ -151,31 +157,34 @@ function addFooter(doc: jsPDF) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageCount = doc.getNumberOfPages();
-  const currentPage = (doc as unknown as { internal: { getCurrentPageInfo: () => { pageNumber: number } } }).internal.getCurrentPageInfo?.()?.pageNumber || 1;
+  const currentPage =
+    (
+      doc as unknown as {
+        internal: { getCurrentPageInfo: () => { pageNumber: number } };
+      }
+    ).internal.getCurrentPageInfo?.()?.pageNumber || 1;
 
   doc.setFontSize(7);
   doc.setTextColor(156, 163, 175); // #9ca3af
-  doc.setFont('helvetica', 'normal');
+  doc.setFont("helvetica", "normal");
   doc.text(
-    `CashPilot — Genere le ${new Date().toLocaleDateString('fr-FR')} a ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+    `CashPilot — Genere le ${new Date().toLocaleDateString("fr-FR")} a ${new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`,
     15,
-    pageHeight - 8
+    pageHeight - 8,
   );
   doc.text(
     `Page ${currentPage} / ${pageCount}`,
     pageWidth - 15,
     pageHeight - 8,
-    { align: 'right' }
+    { align: "right" },
   );
 }
 
 // ============================================================================
-// CONVENIENCE: Format FCFA for PDF
+// CONVENIENCE: Format FCFA for PDF (re-exported from centralized utility)
 // ============================================================================
 
-export function formatFCFA(amount: number): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'decimal', maximumFractionDigits: 0 }).format(amount) + ' FCFA';
-}
+export const formatFCFA = formatFrancs;
 
 // ============================================================================
 // REPORT-SPECIFIC PDF GENERATORS
@@ -185,29 +194,29 @@ export function exportCashPositionPdf(data: Record<string, unknown>) {
   const accounts = (data.accounts as Record<string, unknown>[]) || [];
   generatePdf(
     {
-      title: 'Situation de Tresorerie',
+      title: "Situation de Tresorerie",
       company: data.company_name as string,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toLocaleDateString("fr-FR"),
     },
     [
       {
-        title: 'Position par compte',
+        title: "Position par compte",
         table: {
-          headers: ['Compte', 'Banque', 'Devise', 'Solde', 'Statut'],
+          headers: ["Compte", "Banque", "Devise", "Solde", "Statut"],
           rows: accounts.map((a) => [
             a.name as string,
             a.bank_name as string,
             a.currency as string,
             formatFCFA(a.current_balance as number),
-            (a.is_active as boolean) ? 'Actif' : 'Inactif',
+            (a.is_active as boolean) ? "Actif" : "Inactif",
           ]),
         },
       },
       {
-        title: 'Resume',
-        content: `Position totale : ${formatFCFA(data.total_balance as number || 0)}\nNombre de comptes actifs : ${accounts.filter(a => a.is_active).length}\nDate de reference : ${new Date().toLocaleDateString('fr-FR')}`,
+        title: "Resume",
+        content: `Position totale : ${formatFCFA((data.total_balance as number) || 0)}\nNombre de comptes actifs : ${accounts.filter((a) => a.is_active).length}\nDate de reference : ${new Date().toLocaleDateString("fr-FR")}`,
       },
-    ]
+    ],
   );
 }
 
@@ -215,30 +224,32 @@ export function exportCashFlowPdf(data: Record<string, unknown>) {
   const flows = (data.flows as Record<string, unknown>[]) || [];
   generatePdf(
     {
-      title: 'Rapport de Flux de Tresorerie',
-      subtitle: `Periode : ${data.period_start || ''} — ${data.period_end || ''}`,
+      title: "Rapport de Flux de Tresorerie",
+      subtitle: `Periode : ${data.period_start || ""} — ${data.period_end || ""}`,
       company: data.company_name as string,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toLocaleDateString("fr-FR"),
     },
     [
       {
-        title: 'Resume',
-        content: `Encaissements : ${formatFCFA(data.total_receipts as number || 0)}\nDecaissements : ${formatFCFA(data.total_disbursements as number || 0)}\nFlux net : ${formatFCFA(data.net_flow as number || 0)}`,
+        title: "Resume",
+        content: `Encaissements : ${formatFCFA((data.total_receipts as number) || 0)}\nDecaissements : ${formatFCFA((data.total_disbursements as number) || 0)}\nFlux net : ${formatFCFA((data.net_flow as number) || 0)}`,
       },
       {
-        title: 'Detail des flux',
+        title: "Detail des flux",
         table: {
-          headers: ['Date', 'Categorie', 'Contrepartie', 'Montant', 'Statut'],
-          rows: flows.slice(0, 100).map((f) => [
-            f.flow_date as string,
-            f.category as string,
-            (f.counterparty_name as string) || '-',
-            formatFCFA(f.amount as number),
-            f.status as string,
-          ]),
+          headers: ["Date", "Categorie", "Contrepartie", "Montant", "Statut"],
+          rows: flows
+            .slice(0, 100)
+            .map((f) => [
+              f.flow_date as string,
+              f.category as string,
+              (f.counterparty_name as string) || "-",
+              formatFCFA(f.amount as number),
+              f.status as string,
+            ]),
         },
       },
-    ]
+    ],
   );
 }
 
@@ -246,52 +257,62 @@ export function exportBudgetVariancePdf(data: Record<string, unknown>) {
   const lines = (data.lines as Record<string, unknown>[]) || [];
   generatePdf(
     {
-      title: 'Ecart Budget vs Realise',
+      title: "Ecart Budget vs Realise",
       company: data.company_name as string,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toLocaleDateString("fr-FR"),
     },
     [
       {
-        title: 'Comparaison par categorie',
+        title: "Comparaison par categorie",
         table: {
-          headers: ['Categorie', 'Budget', 'Realise', 'Ecart', 'Ecart %'],
+          headers: ["Categorie", "Budget", "Realise", "Ecart", "Ecart %"],
           rows: lines.map((l) => [
             l.category as string,
-            formatFCFA(l.budget as number || 0),
-            formatFCFA(l.actual as number || 0),
-            formatFCFA((l.actual as number || 0) - (l.budget as number || 0)),
-            `${(((l.actual as number || 0) - (l.budget as number || 0)) / Math.max(1, l.budget as number) * 100).toFixed(1)}%`,
+            formatFCFA((l.budget as number) || 0),
+            formatFCFA((l.actual as number) || 0),
+            formatFCFA(
+              ((l.actual as number) || 0) - ((l.budget as number) || 0),
+            ),
+            `${(((((l.actual as number) || 0) - ((l.budget as number) || 0)) / Math.max(1, l.budget as number)) * 100).toFixed(1)}%`,
           ]),
         },
       },
-    ]
+    ],
   );
 }
 
 export function exportAgingPdf(data: Record<string, unknown>) {
-  const counterparties = (data.counterparties as Record<string, unknown>[]) || [];
+  const counterparties =
+    (data.counterparties as Record<string, unknown>[]) || [];
   generatePdf(
     {
-      title: 'Balance Agee des Creances',
+      title: "Balance Agee des Creances",
       company: data.company_name as string,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toLocaleDateString("fr-FR"),
     },
     [
       {
-        title: 'Creances par anciennete',
+        title: "Creances par anciennete",
         table: {
-          headers: ['Contrepartie', '<30j', '30-60j', '60-90j', '>90j', 'Total'],
+          headers: [
+            "Contrepartie",
+            "<30j",
+            "30-60j",
+            "60-90j",
+            ">90j",
+            "Total",
+          ],
           rows: counterparties.map((c) => [
             c.name as string,
-            formatFCFA(c.bucket_30 as number || 0),
-            formatFCFA(c.bucket_60 as number || 0),
-            formatFCFA(c.bucket_90 as number || 0),
-            formatFCFA(c.bucket_over as number || 0),
-            formatFCFA(c.total as number || 0),
+            formatFCFA((c.bucket_30 as number) || 0),
+            formatFCFA((c.bucket_60 as number) || 0),
+            formatFCFA((c.bucket_90 as number) || 0),
+            formatFCFA((c.bucket_over as number) || 0),
+            formatFCFA((c.total as number) || 0),
           ]),
         },
       },
-    ]
+    ],
   );
 }
 
@@ -299,26 +320,36 @@ export function exportCapexPdf(data: Record<string, unknown>) {
   const operations = (data.operations as Record<string, unknown>[]) || [];
   generatePdf(
     {
-      title: 'Rapport CAPEX',
+      title: "Rapport CAPEX",
       company: data.company_name as string,
-      date: new Date().toLocaleDateString('fr-FR'),
+      date: new Date().toLocaleDateString("fr-FR"),
     },
     [
       {
-        title: 'Suivi des operations CAPEX',
+        title: "Suivi des operations CAPEX",
         table: {
-          headers: ['Operation', 'Budget', 'Engage', 'Decaisse', 'Reste', 'Statut'],
+          headers: [
+            "Operation",
+            "Budget",
+            "Engage",
+            "Decaisse",
+            "Reste",
+            "Statut",
+          ],
           rows: operations.map((o) => [
             o.name as string,
-            formatFCFA(o.budget_amount as number || 0),
-            formatFCFA(o.committed_amount as number || 0),
-            formatFCFA(o.spent_amount as number || 0),
-            formatFCFA((o.budget_amount as number || 0) - (o.spent_amount as number || 0)),
+            formatFCFA((o.budget_amount as number) || 0),
+            formatFCFA((o.committed_amount as number) || 0),
+            formatFCFA((o.spent_amount as number) || 0),
+            formatFCFA(
+              ((o.budget_amount as number) || 0) -
+                ((o.spent_amount as number) || 0),
+            ),
             o.status as string,
           ]),
         },
       },
-    ]
+    ],
   );
 }
 
@@ -326,10 +357,10 @@ export function exportGenericPdf(
   title: string,
   company: string,
   tableHeaders: string[],
-  tableRows: (string | number)[][]
+  tableRows: (string | number)[][],
 ) {
   generatePdf(
-    { title, company, date: new Date().toLocaleDateString('fr-FR') },
-    [{ title: 'Donnees', table: { headers: tableHeaders, rows: tableRows } }]
+    { title, company, date: new Date().toLocaleDateString("fr-FR") },
+    [{ title: "Donnees", table: { headers: tableHeaders, rows: tableRows } }],
   );
 }

@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CurrencyDisplay } from '@/components/shared/currency-display';
-import { cn } from '@/lib/utils';
-import type { TFTStatement, PositionBreakdown } from '../types';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CurrencyDisplay } from "@/components/shared/currency-display";
+import { formatFrancs } from "@/utils/currency";
+import { cn } from "@/lib/utils";
+import type { TFTStatement, PositionBreakdown } from "../types";
 
 // ---------------------------------------------------------------------------
 // Breakdown row
@@ -17,10 +18,20 @@ function BreakdownRow({ label, amount }: { label: string; amount: number }) {
   );
 }
 
-function BreakdownCard({ title, breakdown, total }: { title: string; breakdown: PositionBreakdown; total: number }) {
+function BreakdownCard({
+  title,
+  breakdown,
+  total,
+}: {
+  title: string;
+  breakdown: PositionBreakdown;
+  total: number;
+}) {
   return (
     <div className="flex-1 border rounded-lg p-3 space-y-1">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        {title}
+      </p>
       <BreakdownRow label="Banque" amount={breakdown.bank} />
       <BreakdownRow label="Caisse" amount={breakdown.cash} />
       <BreakdownRow label="Mobile Money" amount={breakdown.mobile_money} />
@@ -39,7 +50,7 @@ function BreakdownCard({ title, breakdown, total }: { title: string; breakdown: 
 // ---------------------------------------------------------------------------
 
 interface TFTReconciliationProps {
-  reconciliation: TFTStatement['reconciliation'];
+  reconciliation: TFTStatement["reconciliation"];
 }
 
 export function TFTReconciliation({ reconciliation }: TFTReconciliationProps) {
@@ -49,9 +60,13 @@ export function TFTReconciliation({ reconciliation }: TFTReconciliationProps) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Section D — Rapprochement de tresorerie</CardTitle>
-          <Badge variant={isBalanced ? 'success' : 'destructive'}>
-            {isBalanced ? 'Equilibre' : `Ecart : ${reconciliation.reconciliation_variance.toLocaleString('fr-FR')} FCFA`}
+          <CardTitle className="text-base">
+            Section D — Rapprochement de tresorerie
+          </CardTitle>
+          <Badge variant={isBalanced ? "success" : "destructive"}>
+            {isBalanced
+              ? "Equilibre"
+              : `Ecart : ${formatFrancs(reconciliation.reconciliation_variance)}`}
           </Badge>
         </div>
       </CardHeader>
@@ -60,19 +75,39 @@ export function TFTReconciliation({ reconciliation }: TFTReconciliationProps) {
         <div className="border rounded-lg divide-y">
           <div className="flex items-center justify-between px-4 py-2.5 text-sm">
             <span>Flux net d'exploitation (A)</span>
-            <CurrencyDisplay amount={reconciliation.net_exploitation} currency="XOF" colorize className="font-medium" />
+            <CurrencyDisplay
+              amount={reconciliation.net_exploitation}
+              currency="XOF"
+              colorize
+              className="font-medium"
+            />
           </div>
           <div className="flex items-center justify-between px-4 py-2.5 text-sm">
             <span>Flux net d'investissement (B)</span>
-            <CurrencyDisplay amount={reconciliation.net_investment} currency="XOF" colorize className="font-medium" />
+            <CurrencyDisplay
+              amount={reconciliation.net_investment}
+              currency="XOF"
+              colorize
+              className="font-medium"
+            />
           </div>
           <div className="flex items-center justify-between px-4 py-2.5 text-sm">
             <span>Flux net de financement (C)</span>
-            <CurrencyDisplay amount={reconciliation.net_financing} currency="XOF" colorize className="font-medium" />
+            <CurrencyDisplay
+              amount={reconciliation.net_financing}
+              currency="XOF"
+              colorize
+              className="font-medium"
+            />
           </div>
           <div className="flex items-center justify-between px-4 py-3 bg-muted/50 font-bold text-sm">
             <span>Variation nette de tresorerie (A + B + C)</span>
-            <CurrencyDisplay amount={reconciliation.net_variation} currency="XOF" colorize className="font-bold" />
+            <CurrencyDisplay
+              amount={reconciliation.net_variation}
+              currency="XOF"
+              colorize
+              className="font-bold"
+            />
           </div>
         </div>
 
@@ -91,10 +126,14 @@ export function TFTReconciliation({ reconciliation }: TFTReconciliationProps) {
         </div>
 
         {/* Reconciliation check */}
-        <div className={cn(
-          'flex items-center justify-between px-4 py-3 rounded-lg border-2',
-          isBalanced ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950' : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950',
-        )}>
+        <div
+          className={cn(
+            "flex items-center justify-between px-4 py-3 rounded-lg border-2",
+            isBalanced
+              ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
+              : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950",
+          )}
+        >
           <span className="text-sm font-medium">
             Controle : Cloture - Ouverture - Variation
           </span>
@@ -102,7 +141,12 @@ export function TFTReconciliation({ reconciliation }: TFTReconciliationProps) {
             <CurrencyDisplay
               amount={reconciliation.reconciliation_variance}
               currency="XOF"
-              className={cn('font-bold', isBalanced ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400')}
+              className={cn(
+                "font-bold",
+                isBalanced
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-red-700 dark:text-red-400",
+              )}
             />
             {isBalanced ? (
               <Badge variant="success">OK</Badge>

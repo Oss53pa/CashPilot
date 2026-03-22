@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { formatAmount as _formatAmount } from "@/lib/format";
 
 /**
  * Merge class names with Tailwind CSS conflict resolution.
@@ -10,23 +11,9 @@ export function cn(...inputs: ClassValue[]): string {
 
 /**
  * Format a numeric value as a currency string.
- *
- * @param amount  - The numeric amount to format.
- * @param currency - ISO 4217 currency code (default "USD").
- * @param locale  - BCP 47 locale string (default "en-US").
+ * Delegates to the canonical `formatAmount` in `@/lib/format`.
  */
-export function formatCurrency(
-  amount: number,
-  currency: string = "USD",
-  locale: string = "en-US",
-): string {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
+export const formatCurrency = _formatAmount;
 
 /**
  * Format a Date (or ISO string) into a human-readable string.

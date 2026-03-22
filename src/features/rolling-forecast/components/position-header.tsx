@@ -1,5 +1,6 @@
-import { cn } from '@/lib/utils';
-import type { ForecastColumn, PositionBlock } from '../types';
+import { cn } from "@/lib/utils";
+import type { ForecastColumn, PositionBlock } from "../types";
+import { formatFrancs } from "@/utils/currency";
 
 interface PositionHeaderProps {
   columns: ForecastColumn[];
@@ -7,21 +8,19 @@ interface PositionHeaderProps {
   showConfidence: boolean;
 }
 
-function formatFCFA(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (Math.abs(value) >= 1_000) {
-    return `${(value / 1_000).toFixed(0)}K`;
-  }
-  return value.toLocaleString('fr-FR');
-}
-
-export function PositionHeader({ columns, position, showConfidence }: PositionHeaderProps) {
+export function PositionHeader({
+  columns,
+  position,
+  showConfidence,
+}: PositionHeaderProps) {
   const rows = [
-    { label: 'Position début de période', key: 'opening' as const, bold: false },
-    { label: 'Flux net de la période', key: 'net_flow' as const, bold: false },
-    { label: 'Position fin de période', key: 'closing' as const, bold: true },
+    {
+      label: "Position début de période",
+      key: "opening" as const,
+      bold: false,
+    },
+    { label: "Flux net de la période", key: "net_flow" as const, bold: false },
+    { label: "Position fin de période", key: "closing" as const, bold: true },
   ];
 
   return (
@@ -36,8 +35,8 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
               <th
                 key={col.key}
                 className={cn(
-                  'px-2 py-2 text-right font-medium min-w-[100px]',
-                  col.is_current && 'bg-blue-50 dark:bg-blue-950/30',
+                  "px-2 py-2 text-right font-medium min-w-[100px]",
+                  col.is_current && "bg-blue-50 dark:bg-blue-950/30",
                 )}
               >
                 {col.key}
@@ -50,8 +49,8 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
             <tr key={row.key} className="border-b last:border-b-0">
               <td
                 className={cn(
-                  'sticky left-0 z-10 bg-card px-3 py-1.5',
-                  row.bold && 'font-bold',
+                  "sticky left-0 z-10 bg-card px-3 py-1.5",
+                  row.bold && "font-bold",
                 )}
               >
                 {row.label}
@@ -62,14 +61,14 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
                   <td
                     key={col.key}
                     className={cn(
-                      'px-2 py-1.5 text-right tabular-nums',
-                      row.bold && 'font-bold',
-                      col.is_current && 'bg-blue-50/50 dark:bg-blue-950/20',
-                      row.key === 'net_flow' && val > 0 && 'text-green-600',
-                      row.key === 'net_flow' && val < 0 && 'text-red-600',
+                      "px-2 py-1.5 text-right tabular-nums",
+                      row.bold && "font-bold",
+                      col.is_current && "bg-blue-50/50 dark:bg-blue-950/20",
+                      row.key === "net_flow" && val > 0 && "text-green-600",
+                      row.key === "net_flow" && val < 0 && "text-red-600",
                     )}
                   >
-                    {formatFCFA(val)}
+                    {formatFrancs(val, { compact: true, suffix: false })}
                   </td>
                 );
               })}
@@ -82,7 +81,10 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
               Seuil minimum 50M FCFA
             </td>
             {columns.map((col) => (
-              <td key={col.key} className="px-2 py-1 text-right text-red-500 tabular-nums">
+              <td
+                key={col.key}
+                className="px-2 py-1 text-right text-red-500 tabular-nums"
+              >
                 50.0M
               </td>
             ))}
@@ -99,13 +101,16 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
                 <td
                   key={col.key}
                   className={cn(
-                    'px-2 py-1.5 text-right font-semibold tabular-nums',
-                    val >= 0 ? 'text-green-600' : 'text-red-600',
+                    "px-2 py-1.5 text-right font-semibold tabular-nums",
+                    val >= 0 ? "text-green-600" : "text-red-600",
                   )}
                 >
-                  {val < 0 && '('}
-                  {formatFCFA(Math.abs(val))}
-                  {val < 0 && ')'}
+                  {val < 0 && "("}
+                  {formatFrancs(Math.abs(val), {
+                    compact: true,
+                    suffix: false,
+                  })}
+                  {val < 0 && ")"}
                 </td>
               );
             })}
@@ -119,8 +124,14 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
                   Position optimiste
                 </td>
                 {columns.map((col) => (
-                  <td key={col.key} className="px-2 py-1.5 text-right text-muted-foreground tabular-nums">
-                    {formatFCFA(position.columns[col.key]?.optimistic ?? 0)}
+                  <td
+                    key={col.key}
+                    className="px-2 py-1.5 text-right text-muted-foreground tabular-nums"
+                  >
+                    {formatFrancs(position.columns[col.key]?.optimistic ?? 0, {
+                      compact: true,
+                      suffix: false,
+                    })}
                   </td>
                 ))}
               </tr>
@@ -129,8 +140,14 @@ export function PositionHeader({ columns, position, showConfidence }: PositionHe
                   Position pessimiste
                 </td>
                 {columns.map((col) => (
-                  <td key={col.key} className="px-2 py-1.5 text-right text-muted-foreground tabular-nums">
-                    {formatFCFA(position.columns[col.key]?.pessimistic ?? 0)}
+                  <td
+                    key={col.key}
+                    className="px-2 py-1.5 text-right text-muted-foreground tabular-nums"
+                  >
+                    {formatFrancs(position.columns[col.key]?.pessimistic ?? 0, {
+                      compact: true,
+                      suffix: false,
+                    })}
                   </td>
                 ))}
               </tr>

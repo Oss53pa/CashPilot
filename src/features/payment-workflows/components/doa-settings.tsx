@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,14 +21,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -36,9 +36,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import type { DOARule, DOARuleFormData, ApproverRole, PaymentNature } from '../types';
-import { doaRuleSchema } from '../types';
+} from "@/components/ui/table";
+import type {
+  DOARule,
+  DOARuleFormData,
+  ApproverRole,
+  PaymentNature,
+} from "../types";
+import { doaRuleSchema } from "../types";
 
 interface DOASettingsProps {
   rules: DOARule[];
@@ -49,30 +54,33 @@ interface DOASettingsProps {
 }
 
 const NATURE_LABELS: Record<PaymentNature, string> = {
-  all: 'Standard',
-  capex: 'CAPEX',
-  intercompany: 'Inter-company',
-  emergency: 'Emergency',
+  all: "Standard",
+  capex: "CAPEX",
+  intercompany: "Inter-company",
+  emergency: "Emergency",
 };
 
-const NATURE_VARIANTS: Record<PaymentNature, 'default' | 'secondary' | 'destructive'> = {
-  all: 'default',
-  capex: 'secondary',
-  intercompany: 'secondary',
-  emergency: 'destructive',
+const NATURE_VARIANTS: Record<
+  PaymentNature,
+  "default" | "secondary" | "destructive"
+> = {
+  all: "default",
+  capex: "secondary",
+  intercompany: "secondary",
+  emergency: "destructive",
 };
 
-const APPROVER_ROLES: ApproverRole[] = ['DAF', 'DGA', 'DG', 'CA'];
+import { formatFrancs } from "@/utils/currency";
+
+const APPROVER_ROLES: ApproverRole[] = ["DAF", "DGA", "DG", "CA"];
 
 function formatAmount(amount: number): string {
-  if (amount >= 999_999_999_000) return 'Unlimited';
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(0)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K`;
-  return amount.toLocaleString('fr-FR');
+  if (amount >= 999_999_999_000) return "Unlimited";
+  return formatFrancs(amount, { compact: true, suffix: false });
 }
 
 function formatDelay(hours: number): string {
-  if (hours === 0) return 'Immediate';
+  if (hours === 0) return "Immediate";
   if (hours < 24) return `${hours}h`;
   return `${hours / 24}j (${hours}h)`;
 }
@@ -90,10 +98,10 @@ export function DOASettings({
   const form = useForm<DOARuleFormData>({
     resolver: zodResolver(doaRuleSchema),
     defaultValues: {
-      payment_nature: 'all',
+      payment_nature: "all",
       min_amount: 0,
       max_amount: 500000,
-      approvers: ['DAF'],
+      approvers: ["DAF"],
       max_delay_hours: 0,
       requires_convention: false,
     },
@@ -102,10 +110,10 @@ export function DOASettings({
   function handleOpenCreate() {
     setEditingRule(null);
     form.reset({
-      payment_nature: 'all',
+      payment_nature: "all",
       min_amount: 0,
       max_amount: 500000,
-      approvers: ['DAF'],
+      approvers: ["DAF"],
       max_delay_hours: 0,
       requires_convention: false,
     });
@@ -138,7 +146,12 @@ export function DOASettings({
   // Sort rules: by nature, then by min_amount
   const sortedRules = [...rules].sort((a, b) => {
     if (a.payment_nature !== b.payment_nature) {
-      const order: PaymentNature[] = ['all', 'capex', 'intercompany', 'emergency'];
+      const order: PaymentNature[] = [
+        "all",
+        "capex",
+        "intercompany",
+        "emergency",
+      ];
       return order.indexOf(a.payment_nature) - order.indexOf(b.payment_nature);
     }
     return a.min_amount - b.min_amount;
@@ -149,9 +162,12 @@ export function DOASettings({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-lg">Delegation of Authority (DOA) Rules</CardTitle>
+            <CardTitle className="text-lg">
+              Delegation of Authority (DOA) Rules
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Configure approval chains based on payment nature and amount thresholds (FCFA)
+              Configure approval chains based on payment nature and amount
+              thresholds (FCFA)
             </p>
           </div>
           <Button onClick={handleOpenCreate}>Add Rule</Button>
@@ -177,12 +193,17 @@ export function DOASettings({
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-                    {formatAmount(rule.min_amount)} - {formatAmount(rule.max_amount)}
+                    {formatAmount(rule.min_amount)} -{" "}
+                    {formatAmount(rule.max_amount)}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {rule.approvers.map((role) => (
-                        <Badge key={role} variant="secondary" className="text-xs">
+                        <Badge
+                          key={role}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {role}
                         </Badge>
                       ))}
@@ -191,7 +212,9 @@ export function DOASettings({
                   <TableCell>{formatDelay(rule.max_delay_hours)}</TableCell>
                   <TableCell>
                     {rule.requires_convention ? (
-                      <Badge variant="destructive" className="text-xs">Required</Badge>
+                      <Badge variant="destructive" className="text-xs">
+                        Required
+                      </Badge>
                     ) : (
                       <span className="text-muted-foreground text-sm">-</span>
                     )}
@@ -219,7 +242,10 @@ export function DOASettings({
               ))}
               {sortedRules.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-muted-foreground py-8"
+                  >
                     No DOA rules configured. Add a rule to get started.
                   </TableCell>
                 </TableRow>
@@ -234,11 +260,14 @@ export function DOASettings({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingRule ? 'Edit DOA Rule' : 'New DOA Rule'}
+              {editingRule ? "Edit DOA Rule" : "New DOA Rule"}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="payment_nature"
@@ -254,7 +283,9 @@ export function DOASettings({
                       <SelectContent>
                         <SelectItem value="all">Standard (All)</SelectItem>
                         <SelectItem value="capex">CAPEX</SelectItem>
-                        <SelectItem value="intercompany">Inter-company</SelectItem>
+                        <SelectItem value="intercompany">
+                          Inter-company
+                        </SelectItem>
                         <SelectItem value="emergency">Emergency</SelectItem>
                       </SelectContent>
                     </Select>
@@ -314,7 +345,11 @@ export function DOASettings({
                                     if (checked) {
                                       field.onChange([...current, role]);
                                     } else {
-                                      field.onChange(current.filter((r: string) => r !== role));
+                                      field.onChange(
+                                        current.filter(
+                                          (r: string) => r !== role,
+                                        ),
+                                      );
                                     }
                                   }}
                                 />
@@ -358,7 +393,9 @@ export function DOASettings({
                       />
                     </FormControl>
                     <div>
-                      <FormLabel className="cursor-pointer">Requires Convention</FormLabel>
+                      <FormLabel className="cursor-pointer">
+                        Requires Convention
+                      </FormLabel>
                       <p className="text-xs text-muted-foreground">
                         Convention must be signed before execution
                       </p>
@@ -368,11 +405,15 @@ export function DOASettings({
               />
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setFormOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isLoading}>
-                  {editingRule ? 'Update' : 'Create'}
+                  {editingRule ? "Update" : "Create"}
                 </Button>
               </DialogFooter>
             </form>

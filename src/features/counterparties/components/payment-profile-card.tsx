@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   TrendingUp,
   TrendingDown,
@@ -10,20 +10,16 @@ import {
   ShieldCheck,
   Clock,
   FileText,
-} from 'lucide-react';
-import type { Counterparty } from '@/types/database';
-import type { PaymentProfile, LeaseContract, ColdStartProfile } from '../types';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+} from "lucide-react";
+import type { Counterparty } from "@/types/database";
+import type { PaymentProfile, LeaseContract, ColdStartProfile } from "../types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatFrancs } from "@/utils/currency";
 
 interface PaymentProfileCardProps {
   counterparty: Counterparty;
@@ -31,23 +27,23 @@ interface PaymentProfileCardProps {
   lease: LeaseContract | undefined;
   coldStart: ColdStartProfile | undefined;
   isLoading?: boolean;
-  onUpdateOverrides?: (overrides: { forced_delay?: number | null; probability_override?: number | null; risk_note?: string | null }) => void;
-}
-
-function formatFCFA(amount: number): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'decimal' }).format(amount) + ' FCFA';
+  onUpdateOverrides?: (overrides: {
+    forced_delay?: number | null;
+    probability_override?: number | null;
+    risk_note?: string | null;
+  }) => void;
 }
 
 function TrendIndicator({ trend }: { trend: string }) {
   switch (trend) {
-    case 'improving':
+    case "improving":
       return (
         <span className="inline-flex items-center gap-1 text-green-600">
           <TrendingUp className="h-4 w-4" />
           <span className="text-sm font-medium">Improving</span>
         </span>
       );
-    case 'degrading':
+    case "degrading":
       return (
         <span className="inline-flex items-center gap-1 text-red-600">
           <TrendingDown className="h-4 w-4" />
@@ -70,7 +66,7 @@ function RiskScoreStars({ score }: { score: number }) {
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i < score ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+          className={`h-4 w-4 ${i < score ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
         />
       ))}
       <span className="ml-1 text-sm text-muted-foreground">{score}/5</span>
@@ -79,10 +75,17 @@ function RiskScoreStars({ score }: { score: number }) {
 }
 
 function VigilanceBadge({ status }: { status: string }) {
-  const config: Record<string, { variant: 'success' | 'warning' | 'destructive'; icon: typeof ShieldCheck; label: string }> = {
-    normal: { variant: 'success', icon: ShieldCheck, label: 'Normal' },
-    surveillance: { variant: 'warning', icon: Eye, label: 'Surveillance' },
-    alert: { variant: 'destructive', icon: AlertTriangle, label: 'Alert' },
+  const config: Record<
+    string,
+    {
+      variant: "success" | "warning" | "destructive";
+      icon: typeof ShieldCheck;
+      label: string;
+    }
+  > = {
+    normal: { variant: "success", icon: ShieldCheck, label: "Normal" },
+    surveillance: { variant: "warning", icon: Eye, label: "Surveillance" },
+    alert: { variant: "destructive", icon: AlertTriangle, label: "Alert" },
   };
   const c = config[status] ?? config.normal;
   const Icon = c.icon;
@@ -95,10 +98,10 @@ function VigilanceBadge({ status }: { status: string }) {
 }
 
 const INDEXATION_LABELS: Record<string, string> = {
-  fixed_rate: 'Fixed Rate',
-  external_index: 'External Index',
-  contractual_step: 'Contractual Step',
-  manual: 'Manual',
+  fixed_rate: "Fixed Rate",
+  external_index: "External Index",
+  contractual_step: "Contractual Step",
+  manual: "Manual",
 };
 
 export function PaymentProfileCard({
@@ -108,17 +111,23 @@ export function PaymentProfileCard({
   isLoading,
   onUpdateOverrides,
 }: PaymentProfileCardProps) {
-  const { t } = useTranslation('counterparties');
-  const [forcedDelayEnabled, setForcedDelayEnabled] = useState(!!profile?.forced_delay);
-  const [forcedDelay, setForcedDelay] = useState<number>(profile?.forced_delay ?? 0);
-  const [probabilityOverride, setProbabilityOverride] = useState<string>('');
-  const [riskNote, setRiskNote] = useState<string>('');
+  const { t } = useTranslation("counterparties");
+  const [forcedDelayEnabled, setForcedDelayEnabled] = useState(
+    !!profile?.forced_delay,
+  );
+  const [forcedDelay, setForcedDelay] = useState<number>(
+    profile?.forced_delay ?? 0,
+  );
+  const [probabilityOverride, setProbabilityOverride] = useState<string>("");
+  const [riskNote, setRiskNote] = useState<string>("");
 
   if (isLoading) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">{t('profile.loading', 'Loading payment profile...')}</p>
+          <p className="text-muted-foreground">
+            {t("profile.loading", "Loading payment profile...")}
+          </p>
         </CardContent>
       </Card>
     );
@@ -127,7 +136,9 @@ export function PaymentProfileCard({
   function handleSaveOverrides() {
     onUpdateOverrides?.({
       forced_delay: forcedDelayEnabled ? forcedDelay : null,
-      probability_override: probabilityOverride ? parseFloat(probabilityOverride) : null,
+      probability_override: probabilityOverride
+        ? parseFloat(probabilityOverride)
+        : null,
       risk_note: riskNote || null,
     });
   }
@@ -141,14 +152,18 @@ export function PaymentProfileCard({
             <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
             <div>
               <p className="font-medium text-yellow-800">
-                {t('profile.cold_start_title', 'Cold-Start Profile Active')}
+                {t("profile.cold_start_title", "Cold-Start Profile Active")}
               </p>
               <p className="text-sm text-yellow-700 mt-1">
-                {t('profile.cold_start_desc', 'Only {{months}} month(s) of data available. Using sector average delay of {{delay}} days. Profile will converge after {{convergence}} months.', {
-                  months: coldStart.months_of_data,
-                  delay: coldStart.sector_avg_delay,
-                  convergence: coldStart.convergence_months,
-                })}
+                {t(
+                  "profile.cold_start_desc",
+                  "Only {{months}} month(s) of data available. Using sector average delay of {{delay}} days. Profile will converge after {{convergence}} months.",
+                  {
+                    months: coldStart.months_of_data,
+                    delay: coldStart.sector_avg_delay,
+                    convergence: coldStart.convergence_months,
+                  },
+                )}
               </p>
             </div>
           </CardContent>
@@ -161,35 +176,57 @@ export function PaymentProfileCard({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              {t('profile.contractual_data', 'Contractual Data')}
+              {t("profile.contractual_data", "Contractual Data")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.lease_ref', 'Lease Reference')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.lease_ref", "Lease Reference")}
+                </p>
                 <p className="font-medium">{lease.lease_reference}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.monthly_rent', 'Monthly Rent HT')}</p>
-                <p className="font-medium">{formatFCFA(lease.monthly_rent_ht)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.monthly_charges', 'Monthly Charges HT')}</p>
-                <p className="font-medium">{formatFCFA(lease.monthly_charges_ht)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.due_day', 'Due Day')}</p>
-                <p className="font-medium">{lease.payment_due_day} of each month</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.deposit', 'Security Deposit')}</p>
-                <p className="font-medium">{formatFCFA(lease.security_deposit)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.indexation', 'Indexation')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.monthly_rent", "Monthly Rent HT")}
+                </p>
                 <p className="font-medium">
-                  {INDEXATION_LABELS[lease.indexation_type] ?? lease.indexation_type} ({lease.indexation_rate}%)
+                  {formatFrancs(lease.monthly_rent_ht)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.monthly_charges", "Monthly Charges HT")}
+                </p>
+                <p className="font-medium">
+                  {formatFrancs(lease.monthly_charges_ht)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.due_day", "Due Day")}
+                </p>
+                <p className="font-medium">
+                  {lease.payment_due_day} of each month
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.deposit", "Security Deposit")}
+                </p>
+                <p className="font-medium">
+                  {formatFrancs(lease.security_deposit)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.indexation", "Indexation")}
+                </p>
+                <p className="font-medium">
+                  {INDEXATION_LABELS[lease.indexation_type] ??
+                    lease.indexation_type}{" "}
+                  ({lease.indexation_rate}%)
                 </p>
               </div>
             </div>
@@ -203,40 +240,58 @@ export function PaymentProfileCard({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              {t('profile.observed_behavior', 'Observed Payment Behavior')}
+              {t("profile.observed_behavior", "Observed Payment Behavior")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.avg_delay', 'Avg Delay')}</p>
-                <p className="font-medium">
-                  {profile.avg_delay_days} days <span className="text-muted-foreground text-xs">+/- {profile.delay_std_dev}</span>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.avg_delay", "Avg Delay")}
                 </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.full_payment', 'Full Payment Rate')}</p>
-                <p className="font-medium">{(profile.full_payment_rate * 100).toFixed(0)}%</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('profile.partial_payment', 'Partial Payment Rate')}</p>
                 <p className="font-medium">
-                  {(profile.partial_payment_rate * 100).toFixed(0)}%
-                  <span className="text-muted-foreground text-xs ml-1">
-                    (avg {(profile.avg_partial_amount_pct * 100).toFixed(0)}% of amount)
+                  {profile.avg_delay_days} days{" "}
+                  <span className="text-muted-foreground text-xs">
+                    +/- {profile.delay_std_dev}
                   </span>
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.history', 'History')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.full_payment", "Full Payment Rate")}
+                </p>
+                <p className="font-medium">
+                  {(profile.full_payment_rate * 100).toFixed(0)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.partial_payment", "Partial Payment Rate")}
+                </p>
+                <p className="font-medium">
+                  {(profile.partial_payment_rate * 100).toFixed(0)}%
+                  <span className="text-muted-foreground text-xs ml-1">
+                    (avg {(profile.avg_partial_amount_pct * 100).toFixed(0)}% of
+                    amount)
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.history", "History")}
+                </p>
                 <p className="font-medium">{profile.history_months} months</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.trend', 'Trend')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.trend", "Trend")}
+                </p>
                 <TrendIndicator trend={profile.trend} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.vigilance', 'Vigilance')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.vigilance", "Vigilance")}
+                </p>
                 <VigilanceBadge status={profile.vigilance_status} />
               </div>
             </div>
@@ -245,7 +300,9 @@ export function PaymentProfileCard({
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t('profile.risk_score', 'Risk Score')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.risk_score", "Risk Score")}
+                </p>
                 <RiskScoreStars score={profile.risk_score} />
               </div>
             </div>
@@ -257,15 +314,20 @@ export function PaymentProfileCard({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            {t('profile.manual_overrides', 'Manual Overrides')}
+            {t("profile.manual_overrides", "Manual Overrides")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
-              <p className="font-medium text-sm">{t('profile.forced_delay_label', 'Forced Delay Override')}</p>
+              <p className="font-medium text-sm">
+                {t("profile.forced_delay_label", "Forced Delay Override")}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {t('profile.forced_delay_desc', 'Override the observed average delay with a fixed value')}
+                {t(
+                  "profile.forced_delay_desc",
+                  "Override the observed average delay with a fixed value",
+                )}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -288,7 +350,9 @@ export function PaymentProfileCard({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium">{t('profile.probability_override', 'Probability Override (%)')}</label>
+              <label className="text-sm font-medium">
+                {t("profile.probability_override", "Probability Override (%)")}
+              </label>
               <Input
                 type="number"
                 min={0}
@@ -300,19 +364,24 @@ export function PaymentProfileCard({
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t('profile.risk_note', 'Risk Note')}</label>
+              <label className="text-sm font-medium">
+                {t("profile.risk_note", "Risk Note")}
+              </label>
               <Input
                 className="mt-1"
                 value={riskNote}
                 onChange={(e) => setRiskNote(e.target.value)}
-                placeholder={t('profile.risk_note_placeholder', 'Internal observation...')}
+                placeholder={t(
+                  "profile.risk_note_placeholder",
+                  "Internal observation...",
+                )}
               />
             </div>
           </div>
 
           <div className="flex justify-end">
             <Button size="sm" onClick={handleSaveOverrides}>
-              {t('profile.save_overrides', 'Save Overrides')}
+              {t("profile.save_overrides", "Save Overrides")}
             </Button>
           </div>
         </CardContent>

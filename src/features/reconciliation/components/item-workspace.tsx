@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -8,22 +8,29 @@ import {
   MessageSquare,
   Send,
   ArrowRight,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { reconciliationService } from '../services/reconciliation.service';
-import type { ReconciliationItem } from '../types';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { reconciliationService } from "../services/reconciliation.service";
+import { formatFrancs } from "@/utils/currency";
+import type { ReconciliationItem } from "../types";
 
 interface ItemWorkspaceProps {
   item: ReconciliationItem;
   currentUserId: string;
-  onProposeMatch: (data: { flow_id: string; flow_label: string; match_type: string; confidence: number; notes?: string }) => void;
+  onProposeMatch: (data: {
+    flow_id: string;
+    flow_label: string;
+    match_type: string;
+    confidence: number;
+    notes?: string;
+  }) => void;
   onValidateProposal: () => void;
   onRejectProposal: (reason: string) => void;
   onResolve: (action: string, notes?: string) => void;
@@ -32,25 +39,25 @@ interface ItemWorkspaceProps {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-}
-
-function formatAmount(amount: number): string {
-  return new Intl.NumberFormat('fr-FR').format(Math.abs(amount)) + ' FCFA';
 }
 
 function getParticipantColor(name?: string): string {
   switch (name) {
-    case 'Aniela': return '#6366f1';
-    case 'Koné': return '#f59e0b';
-    case 'Fatou': return '#10b981';
-    default: return '#6b7280';
+    case "Aniela":
+      return "#6366f1";
+    case "Koné":
+      return "#f59e0b";
+    case "Fatou":
+      return "#10b981";
+    default:
+      return "#6b7280";
   }
 }
 
@@ -64,33 +71,37 @@ export function ItemWorkspace({
   onSkip,
   onAddComment,
 }: ItemWorkspaceProps) {
-  const [commentText, setCommentText] = useState('');
-  const [rejectReason, setRejectReason] = useState('');
+  const [commentText, setCommentText] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
-  const [skipReason, setSkipReason] = useState('');
+  const [skipReason, setSkipReason] = useState("");
   const [showSkipInput, setShowSkipInput] = useState(false);
 
   const suggestedMatches = reconciliationService.getSuggestedMatches(item.id);
-  const isResolved = item.status === 'validated' || item.status === 'rejected' || item.status === 'skipped';
-  const hasProposal = item.status === 'proposed' && item.proposed_match;
-  const canAct = !isResolved && (item.locked_by === currentUserId || !item.locked_by);
+  const isResolved =
+    item.status === "validated" ||
+    item.status === "rejected" ||
+    item.status === "skipped";
+  const hasProposal = item.status === "proposed" && item.proposed_match;
+  const canAct =
+    !isResolved && (item.locked_by === currentUserId || !item.locked_by);
 
   const handleSubmitComment = () => {
     if (!commentText.trim()) return;
     onAddComment(commentText.trim());
-    setCommentText('');
+    setCommentText("");
   };
 
   const handleReject = () => {
     if (!rejectReason.trim()) return;
     onRejectProposal(rejectReason.trim());
-    setRejectReason('');
+    setRejectReason("");
     setShowRejectInput(false);
   };
 
   const handleSkip = () => {
     onSkip(skipReason.trim() || undefined);
-    setSkipReason('');
+    setSkipReason("");
     setShowSkipInput(false);
   };
 
@@ -103,17 +114,22 @@ export function ItemWorkspace({
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Date</span>
-              <span>{new Date(item.date).toLocaleDateString('fr-FR')}</span>
+              <span>{new Date(item.date).toLocaleDateString("fr-FR")}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Montant</span>
-              <span className={`font-mono font-medium ${item.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {item.amount < 0 ? '-' : '+'}{formatAmount(item.amount)}
+              <span
+                className={`font-mono font-medium ${item.amount < 0 ? "text-red-600" : "text-green-600"}`}
+              >
+                {item.amount < 0 ? "-" : "+"}
+                {formatFrancs(Math.abs(item.amount))}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Description</span>
-              <span className="text-right max-w-[200px]">{item.description}</span>
+              <span className="text-right max-w-[200px]">
+                {item.description}
+              </span>
             </div>
             {item.counterparty && (
               <div className="flex justify-between">
@@ -130,7 +146,11 @@ export function ItemWorkspace({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Type</span>
               <Badge variant="outline" className="text-[10px]">
-                {item.type === 'bank_transaction' ? 'Transaction bancaire' : item.type === 'internal_flow' ? 'Flux interne' : 'Non identifié'}
+                {item.type === "bank_transaction"
+                  ? "Transaction bancaire"
+                  : item.type === "internal_flow"
+                    ? "Flux interne"
+                    : "Non identifié"}
               </Badge>
             </div>
           </div>
@@ -145,10 +165,13 @@ export function ItemWorkspace({
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Action : {item.resolution.action} — {formatDate(item.resolution.resolved_at)}
+                Action : {item.resolution.action} —{" "}
+                {formatDate(item.resolution.resolved_at)}
               </p>
               {item.resolution.notes && (
-                <p className="text-muted-foreground italic">{item.resolution.notes}</p>
+                <p className="text-muted-foreground italic">
+                  {item.resolution.notes}
+                </p>
               )}
             </div>
           )}
@@ -159,24 +182,35 @@ export function ItemWorkspace({
           {/* Proposed match display */}
           {hasProposal && item.proposed_match && (
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Proposition de rapprochement</h4>
+              <h4 className="text-sm font-semibold">
+                Proposition de rapprochement
+              </h4>
               <Card className="border-yellow-300 bg-yellow-50/50 dark:bg-yellow-950/10">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{item.proposed_match.matched_flow_label}</span>
+                    <span className="text-sm font-medium">
+                      {item.proposed_match.matched_flow_label}
+                    </span>
                     <Badge variant="warning" className="text-[10px]">
                       {Math.round(item.proposed_match.confidence * 100)}%
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Proposé par {item.proposed_match.proposed_by_name} le {formatDate(item.proposed_match.proposed_at)}
+                    Proposé par {item.proposed_match.proposed_by_name} le{" "}
+                    {formatDate(item.proposed_match.proposed_at)}
                   </p>
                   {item.proposed_match.notes && (
-                    <p className="text-xs italic text-muted-foreground">{item.proposed_match.notes}</p>
+                    <p className="text-xs italic text-muted-foreground">
+                      {item.proposed_match.notes}
+                    </p>
                   )}
                   {canAct && (
                     <div className="flex gap-2 pt-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={onValidateProposal}>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={onValidateProposal}
+                      >
                         <CheckCircle2 className="mr-1 h-3 w-3" />
                         Valider
                       </Button>
@@ -198,9 +232,13 @@ export function ItemWorkspace({
                         onChange={(e) => setRejectReason(e.target.value)}
                         placeholder="Motif du rejet..."
                         className="h-7 text-xs"
-                        onKeyDown={(e) => e.key === 'Enter' && handleReject()}
+                        onKeyDown={(e) => e.key === "Enter" && handleReject()}
                       />
-                      <Button size="sm" className="h-7 text-xs" onClick={handleReject}>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={handleReject}
+                      >
                         Confirmer
                       </Button>
                     </div>
@@ -213,16 +251,23 @@ export function ItemWorkspace({
           {/* Suggested matches */}
           {!isResolved && !hasProposal && suggestedMatches.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Correspondances suggérées</h4>
+              <h4 className="text-sm font-semibold">
+                Correspondances suggérées
+              </h4>
               {suggestedMatches.map((match) => (
-                <Card key={match.flow_id} className="hover:border-primary/50 transition-colors">
+                <Card
+                  key={match.flow_id}
+                  className="hover:border-primary/50 transition-colors"
+                >
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <p className="text-sm font-medium">{match.flow_label}</p>
+                        <p className="text-sm font-medium">
+                          {match.flow_label}
+                        </p>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[10px]">
-                            {match.match_type === 'exact' ? 'Exact' : 'Approx.'}
+                            {match.match_type === "exact" ? "Exact" : "Approx."}
                           </Badge>
                           <ConfidenceBadge confidence={match.confidence} />
                         </div>
@@ -232,12 +277,14 @@ export function ItemWorkspace({
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs"
-                          onClick={() => onProposeMatch({
-                            flow_id: match.flow_id,
-                            flow_label: match.flow_label,
-                            match_type: match.match_type,
-                            confidence: match.confidence,
-                          })}
+                          onClick={() =>
+                            onProposeMatch({
+                              flow_id: match.flow_id,
+                              flow_label: match.flow_label,
+                              match_type: match.match_type,
+                              confidence: match.confidence,
+                            })
+                          }
                         >
                           <ArrowRight className="h-3 w-3" />
                         </Button>
@@ -251,7 +298,9 @@ export function ItemWorkspace({
 
           {!isResolved && !hasProposal && suggestedMatches.length === 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Correspondances suggérées</h4>
+              <h4 className="text-sm font-semibold">
+                Correspondances suggérées
+              </h4>
               <p className="text-xs text-muted-foreground italic">
                 Aucune correspondance automatique trouvée.
               </p>
@@ -266,7 +315,7 @@ export function ItemWorkspace({
                 <Button
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => onResolve('matched')}
+                  onClick={() => onResolve("matched")}
                 >
                   <CheckCircle2 className="mr-1 h-3 w-3" />
                   Confirmer match
@@ -275,7 +324,7 @@ export function ItemWorkspace({
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => onResolve('created_new')}
+                  onClick={() => onResolve("created_new")}
                 >
                   <Plus className="mr-1 h-3 w-3" />
                   Créer nouveau flux
@@ -284,7 +333,7 @@ export function ItemWorkspace({
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => onResolve('split')}
+                  onClick={() => onResolve("split")}
                 >
                   <Split className="mr-1 h-3 w-3" />
                   Diviser
@@ -306,9 +355,13 @@ export function ItemWorkspace({
                       onChange={(e) => setSkipReason(e.target.value)}
                       placeholder="Raison (optionnel)..."
                       className="h-7 text-xs"
-                      onKeyDown={(e) => e.key === 'Enter' && handleSkip()}
+                      onKeyDown={(e) => e.key === "Enter" && handleSkip()}
                     />
-                    <Button size="sm" className="h-7 text-xs" onClick={handleSkip}>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleSkip}
+                    >
                       Confirmer
                     </Button>
                   </div>
@@ -332,25 +385,33 @@ export function ItemWorkspace({
                   <Avatar className="h-6 w-6 shrink-0">
                     <AvatarFallback
                       className="text-[9px] font-bold text-white"
-                      style={{ backgroundColor: getParticipantColor(comment.user_name) }}
+                      style={{
+                        backgroundColor: getParticipantColor(comment.user_name),
+                      }}
                     >
                       {comment.user_name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium">{comment.user_name}</span>
+                      <span className="text-xs font-medium">
+                        {comment.user_name}
+                      </span>
                       <span className="text-[10px] text-muted-foreground">
                         {formatDate(comment.created_at)}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{comment.content}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {comment.content}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground italic">Aucun commentaire</p>
+            <p className="text-xs text-muted-foreground italic">
+              Aucun commentaire
+            </p>
           )}
 
           <Separator />
@@ -361,7 +422,7 @@ export function ItemWorkspace({
               placeholder="Ajouter un commentaire..."
               className="min-h-[60px] text-xs resize-none"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmitComment();
                 }
@@ -385,11 +446,14 @@ export function ItemWorkspace({
 
 function ConfidenceBadge({ confidence }: { confidence: number }) {
   const pct = Math.round(confidence * 100);
-  const color = pct >= 90 ? 'text-green-600' : pct >= 70 ? 'text-yellow-600' : 'text-orange-600';
+  const color =
+    pct >= 90
+      ? "text-green-600"
+      : pct >= 70
+        ? "text-yellow-600"
+        : "text-orange-600";
 
   return (
-    <span className={`text-[10px] font-medium ${color}`}>
-      {pct}% confiance
-    </span>
+    <span className={`text-[10px] font-medium ${color}`}>{pct}% confiance</span>
   );
 }

@@ -1,38 +1,53 @@
-import { BarChart3, Clock, CheckCircle2, XCircle, Zap, Users } from 'lucide-react';
+import {
+  BarChart3,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Zap,
+  Users,
+} from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import type { SessionMetrics as SessionMetricsType, SessionParticipant } from '../types';
+import type {
+  SessionMetrics as SessionMetricsType,
+  SessionParticipant,
+} from "../types";
+import { formatFrancs } from "@/utils/currency";
 
 interface SessionMetricsProps {
   metrics: SessionMetricsType;
   participants?: SessionParticipant[];
 }
 
-function formatAmount(amount: number): string {
-  return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
-}
-
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}m${s > 0 ? `${s.toString().padStart(2, '0')}s` : ''}`;
+  return `${m}m${s > 0 ? `${s.toString().padStart(2, "0")}s` : ""}`;
 }
 
-export function SessionMetricsCard({ metrics, participants }: SessionMetricsProps) {
-  const totalResolved = metrics.auto_matched + metrics.manual_matched + metrics.skipped + metrics.rejected;
-  const resolutionRate = metrics.total_items > 0
-    ? Math.round((totalResolved / metrics.total_items) * 100)
-    : 0;
+export function SessionMetricsCard({
+  metrics,
+  participants,
+}: SessionMetricsProps) {
+  const totalResolved =
+    metrics.auto_matched +
+    metrics.manual_matched +
+    metrics.skipped +
+    metrics.rejected;
+  const resolutionRate =
+    metrics.total_items > 0
+      ? Math.round((totalResolved / metrics.total_items) * 100)
+      : 0;
 
   // Donut chart segments
   const segments = [
-    { label: 'Auto-rapprochés', value: metrics.auto_matched, color: '#22c55e' },
-    { label: 'Manuels', value: metrics.manual_matched, color: '#6366f1' },
-    { label: 'En attente', value: metrics.pending, color: '#94a3b8' },
-    { label: 'Ignorés', value: metrics.skipped, color: '#f59e0b' },
-    { label: 'Rejetés', value: metrics.rejected, color: '#ef4444' },
+    { label: "Auto-rapprochés", value: metrics.auto_matched, color: "#22c55e" },
+    { label: "Manuels", value: metrics.manual_matched, color: "#6366f1" },
+    { label: "En attente", value: metrics.pending, color: "#94a3b8" },
+    { label: "Ignorés", value: metrics.skipped, color: "#f59e0b" },
+    { label: "Rejetés", value: metrics.rejected, color: "#ef4444" },
   ];
 
   const total = segments.reduce((sum, s) => sum + s.value, 0);
@@ -83,10 +98,20 @@ export function SessionMetricsCard({ metrics, participants }: SessionMetricsProp
               ))}
               {/* Center hole */}
               <circle cx="50" cy="50" r="25" className="fill-background" />
-              <text x="50" y="48" textAnchor="middle" className="fill-foreground text-[11px] font-bold">
+              <text
+                x="50"
+                y="48"
+                textAnchor="middle"
+                className="fill-foreground text-[11px] font-bold"
+              >
                 {resolutionRate}%
               </text>
-              <text x="50" y="58" textAnchor="middle" className="fill-muted-foreground text-[7px]">
+              <text
+                x="50"
+                y="58"
+                textAnchor="middle"
+                className="fill-muted-foreground text-[7px]"
+              >
                 résolu
               </text>
             </svg>
@@ -119,7 +144,9 @@ export function SessionMetricsCard({ metrics, participants }: SessionMetricsProp
               <Clock className="h-3 w-3" />
               Temps moyen
             </div>
-            <p className="text-lg font-bold">{formatDuration(metrics.avg_resolution_time_seconds)}</p>
+            <p className="text-lg font-bold">
+              {formatDuration(metrics.avg_resolution_time_seconds)}
+            </p>
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -127,7 +154,7 @@ export function SessionMetricsCard({ metrics, participants }: SessionMetricsProp
               Montant réconcilié
             </div>
             <p className="text-sm font-bold text-green-600">
-              {formatAmount(metrics.total_amount_reconciled)}
+              {formatFrancs(metrics.total_amount_reconciled)}
             </p>
           </div>
           <div className="space-y-0.5">
@@ -136,7 +163,7 @@ export function SessionMetricsCard({ metrics, participants }: SessionMetricsProp
               Montant en attente
             </div>
             <p className="text-sm font-bold text-orange-600">
-              {formatAmount(metrics.total_amount_pending)}
+              {formatFrancs(metrics.total_amount_pending)}
             </p>
           </div>
         </div>
@@ -158,7 +185,9 @@ export function SessionMetricsCard({ metrics, participants }: SessionMetricsProp
                     style={{ backgroundColor: p.color }}
                   />
                   <span className="text-xs flex-1">{p.user_name}</span>
-                  <span className="text-xs font-medium">{resolvedCount} résolu{resolvedCount > 1 ? 's' : ''}</span>
+                  <span className="text-xs font-medium">
+                    {resolvedCount} résolu{resolvedCount > 1 ? "s" : ""}
+                  </span>
                 </div>
               );
             })}

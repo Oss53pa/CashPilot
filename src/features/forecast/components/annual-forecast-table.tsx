@@ -1,27 +1,43 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from "react";
 import {
-  ChevronRight, ChevronDown,
-  AlertTriangle, CheckCircle, Info, Lock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+  ChevronRight,
+  ChevronDown,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Lock,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatFCFA } from "@/utils/currency";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip as UITooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type CellStatus = 'past_closed' | 'current_partial' | 'future_forecast';
-export type AlertLevel = 'ok' | 'warning' | 'critical' | null;
-export type RowType = 'income' | 'expense' | 'capex' | 'debt' | 'treasury' | 'total' | 'position';
-export type ViewMode = 'budget_forecast' | 'budget_forecast_realized' | 'budget_only' | 'forecast_only';
+export type CellStatus = "past_closed" | "current_partial" | "future_forecast";
+export type AlertLevel = "ok" | "warning" | "critical" | null;
+export type RowType =
+  | "income"
+  | "expense"
+  | "capex"
+  | "debt"
+  | "treasury"
+  | "total"
+  | "position";
+export type ViewMode =
+  | "budget_forecast"
+  | "budget_forecast_realized"
+  | "budget_only"
+  | "forecast_only";
 
 export interface TableCell {
   month: number;
@@ -62,25 +78,31 @@ interface AnnualForecastTableProps {
 // CONSTANTS
 // ============================================================================
 
-const MONTHS = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Avr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aou",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
 function formatAmount(centimes: number): string {
-  const amount = centimes / 100;
-  if (Math.abs(amount) >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(1)}M`;
-  }
-  if (Math.abs(amount) >= 1_000) {
-    return `${(amount / 1_000).toFixed(0)}K`;
-  }
-  return amount.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+  return formatFCFA(centimes, { compact: true, suffix: false });
 }
 
 function formatFull(centimes: number): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'decimal', maximumFractionDigits: 0 }).format(centimes / 100) + ' FCFA';
+  return formatFCFA(centimes);
 }
 
 function variance(actual: number, reference: number): number | null {
@@ -89,26 +111,28 @@ function variance(actual: number, reference: number): number | null {
 }
 
 function varianceColor(pct: number | null, isIncome: boolean): string {
-  if (pct === null) return '';
+  if (pct === null) return "";
   // For income: positive = good. For expense: negative = good.
   const favorable = isIncome ? pct > 0 : pct < 0;
   const absPct = Math.abs(pct);
-  if (absPct <= 5) return '';
-  if (favorable) return 'text-green-600';
-  if (absPct <= 15) return 'text-orange-500';
-  return 'text-red-600';
+  if (absPct <= 5) return "";
+  if (favorable) return "text-green-600";
+  if (absPct <= 15) return "text-orange-500";
+  return "text-red-600";
 }
 
 function cellBg(status: CellStatus): string {
-  if (status === 'past_closed') return '';
-  if (status === 'current_partial') return 'bg-blue-50/50';
-  return 'bg-gray-50/50';
+  if (status === "past_closed") return "";
+  if (status === "current_partial") return "bg-blue-50/50";
+  return "bg-gray-50/50";
 }
 
 function alertIcon(level: AlertLevel) {
-  if (level === 'critical') return <AlertTriangle className="h-3 w-3 text-red-600" />;
-  if (level === 'warning') return <AlertTriangle className="h-3 w-3 text-orange-500" />;
-  if (level === 'ok') return <CheckCircle className="h-3 w-3 text-green-600" />;
+  if (level === "critical")
+    return <AlertTriangle className="h-3 w-3 text-red-600" />;
+  if (level === "warning")
+    return <AlertTriangle className="h-3 w-3 text-orange-500" />;
+  if (level === "ok") return <CheckCircle className="h-3 w-3 text-green-600" />;
   return null;
 }
 
@@ -135,19 +159,19 @@ function ForecastRow({
   highlightThreshold: number;
   currentMonth: number;
 }) {
-  const isTotal = row.type === 'total';
-  const isPosition = row.type === 'position';
-  const isIncome = row.type === 'income';
+  const isTotal = row.type === "total";
+  const isPosition = row.type === "position";
+  const isIncome = row.type === "income";
 
   // Compute annual totals
   const annualBudget = row.cells.reduce((s, c) => s + c.budget, 0);
   const annualForecast = row.cells.reduce((s, c) => s + c.forecast, 0);
   const rowClasses = cn(
-    'group border-b transition-colors hover:bg-muted/30',
-    isTotal && 'font-semibold bg-muted/20',
-    isPosition && 'font-bold bg-primary/5',
-    row.level === 0 && 'font-bold border-t-2 border-b-2 bg-muted/40',
-    row.level === 3 && 'text-muted-foreground',
+    "group border-b transition-colors hover:bg-muted/30",
+    isTotal && "font-semibold bg-muted/20",
+    isPosition && "font-bold bg-primary/5",
+    row.level === 0 && "font-bold border-t-2 border-b-2 bg-muted/40",
+    row.level === 3 && "text-muted-foreground",
   );
 
   const paddingLeft = 12 + depth * 20;
@@ -174,10 +198,15 @@ function ForecastRow({
           ) : (
             <span className="w-4" />
           )}
-          <span className={cn('text-xs truncate max-w-[200px]', row.level <= 1 && 'text-sm')}>
+          <span
+            className={cn(
+              "text-xs truncate max-w-[200px]",
+              row.level <= 1 && "text-sm",
+            )}
+          >
             {row.label}
           </span>
-          {row.cells.some(c => c.alert_level && c.alert_level !== 'ok') && (
+          {row.cells.some((c) => c.alert_level && c.alert_level !== "ok") && (
             <AlertTriangle className="h-3 w-3 text-orange-500 shrink-0" />
           )}
         </div>
@@ -194,27 +223,35 @@ function ForecastRow({
               <TooltipTrigger asChild>
                 <td
                   className={cn(
-                    'border-r px-1 py-1 text-right text-xs tabular-nums whitespace-nowrap min-w-[70px]',
+                    "border-r px-1 py-1 text-right text-xs tabular-nums whitespace-nowrap min-w-[70px]",
                     cellBg(cell.status),
-                    cell.alert_level === 'critical' && 'bg-red-50',
-                    cell.is_locked && 'bg-yellow-50/50',
+                    cell.alert_level === "critical" && "bg-red-50",
+                    cell.is_locked && "bg-yellow-50/50",
                   )}
                 >
                   <div className="flex flex-col items-end gap-0">
                     {/* Budget line */}
-                    {(viewMode === 'budget_only' || viewMode === 'budget_forecast' || viewMode === 'budget_forecast_realized') && (
+                    {(viewMode === "budget_only" ||
+                      viewMode === "budget_forecast" ||
+                      viewMode === "budget_forecast_realized") && (
                       <span className="text-muted-foreground/60 text-[10px] leading-none">
                         {formatAmount(cell.budget)}
                       </span>
                     )}
 
                     {/* Forecast / Realized line */}
-                    {viewMode !== 'budget_only' && (
-                      <span className={cn(
-                        'font-medium leading-tight',
-                        isPast && cell.realized !== null ? '' : 'text-blue-700',
-                        vPB !== null && Math.abs(vPB) > highlightThreshold && varianceColor(vPB, isIncome),
-                      )}>
+                    {viewMode !== "budget_only" && (
+                      <span
+                        className={cn(
+                          "font-medium leading-tight",
+                          isPast && cell.realized !== null
+                            ? ""
+                            : "text-blue-700",
+                          vPB !== null &&
+                            Math.abs(vPB) > highlightThreshold &&
+                            varianceColor(vPB, isIncome),
+                        )}
+                      >
                         {isPast && cell.realized !== null
                           ? formatAmount(cell.realized)
                           : formatAmount(cell.forecast)}
@@ -223,47 +260,76 @@ function ForecastRow({
 
                     {/* Variance badge */}
                     {showVariance && vPB !== null && Math.abs(vPB) > 2 && (
-                      <span className={cn('text-[9px] leading-none', varianceColor(vPB, isIncome))}>
-                        {vPB > 0 ? '+' : ''}{vPB.toFixed(0)}%
+                      <span
+                        className={cn(
+                          "text-[9px] leading-none",
+                          varianceColor(vPB, isIncome),
+                        )}
+                      >
+                        {vPB > 0 ? "+" : ""}
+                        {vPB.toFixed(0)}%
                       </span>
                     )}
                   </div>
 
                   {/* Indicators */}
                   <div className="flex items-center gap-0.5 justify-end mt-0.5">
-                    {cell.is_locked && <Lock className="h-2.5 w-2.5 text-yellow-600" />}
-                    {cell.note && <Info className="h-2.5 w-2.5 text-blue-500" />}
+                    {cell.is_locked && (
+                      <Lock className="h-2.5 w-2.5 text-yellow-600" />
+                    )}
+                    {cell.note && (
+                      <Info className="h-2.5 w-2.5 text-blue-500" />
+                    )}
                     {alertIcon(cell.alert_level)}
                   </div>
                 </td>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs text-xs">
                 <div className="space-y-1">
-                  <p className="font-semibold">{row.label} — {MONTHS[mi]} 2026</p>
+                  <p className="font-semibold">
+                    {row.label} — {MONTHS[mi]} 2026
+                  </p>
                   <div className="grid grid-cols-2 gap-x-3">
                     <span className="text-muted-foreground">Budget</span>
-                    <span className="text-right">{formatFull(cell.budget)}</span>
+                    <span className="text-right">
+                      {formatFull(cell.budget)}
+                    </span>
                     <span className="text-muted-foreground">Prevision</span>
-                    <span className="text-right">{formatFull(cell.forecast)}</span>
+                    <span className="text-right">
+                      {formatFull(cell.forecast)}
+                    </span>
                     {cell.realized !== null && (
                       <>
                         <span className="text-muted-foreground">Realise</span>
-                        <span className="text-right">{formatFull(cell.realized)}</span>
+                        <span className="text-right">
+                          {formatFull(cell.realized)}
+                        </span>
                       </>
                     )}
                     {vPB !== null && (
                       <>
                         <span className="text-muted-foreground">Ecart P/B</span>
-                        <span className={cn('text-right', varianceColor(vPB, isIncome))}>
-                          {vPB > 0 ? '+' : ''}{vPB.toFixed(1)}%
+                        <span
+                          className={cn(
+                            "text-right",
+                            varianceColor(vPB, isIncome),
+                          )}
+                        >
+                          {vPB > 0 ? "+" : ""}
+                          {vPB.toFixed(1)}%
                         </span>
                       </>
                     )}
                   </div>
                   {cell.model && (
-                    <p className="text-muted-foreground">Modele: {cell.model} — Confiance: {Math.round((cell.confidence ?? 0) * 100)}%</p>
+                    <p className="text-muted-foreground">
+                      Modele: {cell.model} — Confiance:{" "}
+                      {Math.round((cell.confidence ?? 0) * 100)}%
+                    </p>
                   )}
-                  {cell.note && <p className="text-blue-600 italic">{cell.note}</p>}
+                  {cell.note && (
+                    <p className="text-blue-600 italic">{cell.note}</p>
+                  )}
                 </div>
               </TooltipContent>
             </UITooltip>
@@ -274,15 +340,25 @@ function ForecastRow({
       {/* Annual total column (frozen right) */}
       <td className="sticky right-0 z-10 bg-inherit border-l-2 px-2 py-1.5 text-right text-xs tabular-nums font-semibold">
         <div className="flex flex-col items-end">
-          {(viewMode === 'budget_only' || viewMode === 'budget_forecast' || viewMode === 'budget_forecast_realized') && (
-            <span className="text-muted-foreground/60 text-[10px]">{formatAmount(annualBudget)}</span>
+          {(viewMode === "budget_only" ||
+            viewMode === "budget_forecast" ||
+            viewMode === "budget_forecast_realized") && (
+            <span className="text-muted-foreground/60 text-[10px]">
+              {formatAmount(annualBudget)}
+            </span>
           )}
-          {viewMode !== 'budget_only' && (
-            <span className={cn(
-              variance(annualForecast, annualBudget) !== null &&
-              Math.abs(variance(annualForecast, annualBudget)!) > highlightThreshold &&
-              varianceColor(variance(annualForecast, annualBudget), isIncome)
-            )}>
+          {viewMode !== "budget_only" && (
+            <span
+              className={cn(
+                variance(annualForecast, annualBudget) !== null &&
+                  Math.abs(variance(annualForecast, annualBudget)!) >
+                    highlightThreshold &&
+                  varianceColor(
+                    variance(annualForecast, annualBudget),
+                    isIncome,
+                  ),
+              )}
+            >
               {formatAmount(annualForecast)}
             </span>
           )}
@@ -317,7 +393,7 @@ export function AnnualForecastTable({
   });
 
   const toggleRow = useCallback((id: string) => {
-    setCollapsedIds(prev => {
+    setCollapsedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -358,17 +434,27 @@ export function AnnualForecastTable({
     <div className="space-y-2">
       {/* Controls */}
       <div className="flex items-center gap-2 text-xs">
-        <button onClick={expandAll} className="px-2 py-1 rounded border hover:bg-muted transition-colors">
+        <button
+          onClick={expandAll}
+          className="px-2 py-1 rounded border hover:bg-muted transition-colors"
+        >
           Tout developper
         </button>
-        <button onClick={collapseAll} className="px-2 py-1 rounded border hover:bg-muted transition-colors">
+        <button
+          onClick={collapseAll}
+          className="px-2 py-1 rounded border hover:bg-muted transition-colors"
+        >
           Tout reduire
         </button>
         <div className="flex-1" />
         <Badge variant="outline" className="text-[10px]">
-          {viewMode === 'budget_forecast' ? 'Budget + Prevision' :
-           viewMode === 'budget_forecast_realized' ? 'Budget + Prevision + Realise' :
-           viewMode === 'budget_only' ? 'Budget seul' : 'Prevision seule'}
+          {viewMode === "budget_forecast"
+            ? "Budget + Prevision"
+            : viewMode === "budget_forecast_realized"
+              ? "Budget + Prevision + Realise"
+              : viewMode === "budget_only"
+                ? "Budget seul"
+                : "Prevision seule"}
         </Badge>
       </div>
 
@@ -384,9 +470,10 @@ export function AnnualForecastTable({
                 <th
                   key={m}
                   className={cn(
-                    'border-r px-1 py-2 text-center text-xs font-semibold min-w-[70px]',
-                    i + 1 === currentMonth && 'bg-blue-100/50 border-b-2 border-b-blue-500',
-                    i + 1 < currentMonth && 'text-muted-foreground',
+                    "border-r px-1 py-2 text-center text-xs font-semibold min-w-[70px]",
+                    i + 1 === currentMonth &&
+                      "bg-blue-100/50 border-b-2 border-b-blue-500",
+                    i + 1 < currentMonth && "text-muted-foreground",
                   )}
                 >
                   {m}
