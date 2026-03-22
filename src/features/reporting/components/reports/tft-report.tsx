@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslation } from 'react-i18next';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -90,7 +89,6 @@ function generateMockTFT(): { current: TFTLine[]; previous: TFTLine[] } {
 }
 
 export function TFTReport() {
-  const { t } = useTranslation();
   const { current, previous } = generateMockTFT();
 
   return (

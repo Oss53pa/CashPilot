@@ -28,7 +28,7 @@ import * as XLSX from 'xlsx';
 // TYPES
 // ============================================================================
 
-type FlowType = 'receipt' | 'disbursement';
+type FlowType = 'receipt' | 'disbursement' | 'payroll' | 'tax' | 'loan';
 
 interface ParsedInvoice {
   row: number;
@@ -57,8 +57,77 @@ interface BulkImportProps {
 // TEMPLATE GENERATOR
 // ============================================================================
 
+const TYPE_LABELS: Record<FlowType, string> = {
+  receipt: 'Factures de vente (encaissements)',
+  disbursement: 'Factures d\'achat (decaissements)',
+  payroll: 'Salaires et charges sociales',
+  tax: 'Taxes et impots',
+  loan: 'Echeances d\'emprunts',
+};
+
 function downloadInvoiceTemplate(type: FlowType) {
   const wb = XLSX.utils.book_new();
+
+  if (type === 'payroll') {
+    const data = [
+      ['CASHPILOT — Template Import Salaires et Charges Sociales'],
+      ['Instructions : une ligne par employe ou par poste de charge. Montants en FCFA.'],
+      [''],
+      ['Nom employe / Poste', 'Matricule', 'Salaire brut', 'Charges patronales', 'Net a payer', 'Date paiement', 'Compte bancaire', 'Observations'],
+      ['Kouame Jean', 'EMP-001', 850000, 212500, 680000, '25/03/2026', 'SGBCI', ''],
+      ['Traore Aminata', 'EMP-002', 1200000, 300000, 960000, '25/03/2026', 'SGBCI', ''],
+      ['Diallo Moussa', 'EMP-003', 750000, 187500, 600000, '25/03/2026', 'SGBCI', ''],
+      ['Kone Awa', 'EMP-004', 950000, 237500, 760000, '25/03/2026', 'SGBCI', ''],
+      ['Ouattara Ibrahim', 'EMP-005', 1500000, 375000, 1200000, '25/03/2026', 'SGBCI', 'Directeur adjoint'],
+      ['CNPS Cotisations', 'CNPS-MARS', 0, 1312500, 1312500, '31/03/2026', 'SGBCI', 'Charges sociales globales'],
+      ['Primes annuelles', 'PRIME-Q1', 2500000, 625000, 2000000, '25/03/2026', 'SGBCI', 'Prime T1 2026'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [22, 12, 14, 16, 14, 14, 14, 20].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Salaires');
+    XLSX.writeFile(wb, 'CashPilot_Template_Salaires.xlsx');
+    return;
+  }
+
+  if (type === 'tax') {
+    const data = [
+      ['CASHPILOT — Template Import Taxes et Impots'],
+      ['Instructions : une ligne par echeance fiscale. Montants en FCFA.'],
+      [''],
+      ['Type taxe', 'Periode', 'Montant', 'Date echeance', 'Date paiement prevue', 'Reference declaration', 'Compte bancaire', 'Statut', 'Observations'],
+      ['TVA', 'Fevrier 2026', 7200000, '15/03/2026', '14/03/2026', 'DGI-TVA-2026-02', 'SGBCI', 'paye', ''],
+      ['TVA', 'Mars 2026', 7800000, '15/04/2026', '14/04/2026', 'DGI-TVA-2026-03', 'SGBCI', 'a_payer', ''],
+      ['CNPS', 'Mars 2026', 4200000, '31/03/2026', '30/03/2026', 'CNPS-2026-03', 'SGBCI', 'a_payer', ''],
+      ['Acompte IS', 'T1 2026', 8200000, '15/03/2026', '14/03/2026', 'IS-ACO-2026-T1', 'SGBCI', 'paye', ''],
+      ['Patente', '2026', 2400000, '31/03/2026', '', 'PAT-2026', 'SGBCI', 'en_retard', 'Regulariser avant 30/04'],
+      ['Taxe fonciere', '2026', 1800000, '30/06/2026', '', 'TF-2026', 'UBA', 'a_payer', ''],
+      ['Retenue source', 'Mars 2026', 1500000, '15/04/2026', '', 'RS-2026-03', 'SGBCI', 'a_payer', 'Prestataires et honoraires'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [16, 14, 14, 14, 18, 20, 14, 12, 24].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Taxes');
+    XLSX.writeFile(wb, 'CashPilot_Template_Taxes_Impots.xlsx');
+    return;
+  }
+
+  if (type === 'loan') {
+    const data = [
+      ['CASHPILOT — Template Import Echeances d\'Emprunts'],
+      ['Instructions : une ligne par echeance. Montants en FCFA.'],
+      [''],
+      ['Banque / Preteur', 'Reference contrat', 'Date echeance', 'Capital rembourse', 'Interets', 'Total echeance', 'Capital restant du', 'Compte bancaire', 'Observations'],
+      ['SGBCI', 'EMP-SGBCI-2023-001', '01/04/2026', 4245000, 5605000, 9850000, 683155000, 'SGBCI', ''],
+      ['SGBCI', 'EMP-SGBCI-2023-001', '01/05/2026', 4271000, 5579000, 9850000, 678884000, 'SGBCI', ''],
+      ['SGBCI', 'EMP-SGBCI-2023-001', '01/06/2026', 4298000, 5552000, 9850000, 674586000, 'SGBCI', ''],
+      ['BOA', 'EMP-BOA-2024-003', '15/04/2026', 2100000, 1400000, 3500000, 42000000, 'BOA', 'Credit court terme'],
+      ['BOA', 'EMP-BOA-2024-003', '15/05/2026', 2100000, 1350000, 3450000, 39900000, 'BOA', ''],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [18, 22, 14, 16, 14, 14, 18, 14, 20].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Echeances emprunts');
+    XLSX.writeFile(wb, 'CashPilot_Template_Echeances_Emprunts.xlsx');
+    return;
+  }
 
   const instructions = [
     `CASHPILOT — Template Import ${type === 'receipt' ? 'Factures de Vente (Encaissements)' : 'Factures d\'Achat (Decaissements)'}`,
@@ -272,7 +341,7 @@ export function BulkImport({ open, onOpenChange, defaultType = 'receipt' }: Bulk
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
-            Import en masse — {flowType === 'receipt' ? 'Factures de vente' : 'Factures d\'achat'}
+            Import en masse — {TYPE_LABELS[flowType]}
           </DialogTitle>
         </DialogHeader>
 
@@ -281,23 +350,22 @@ export function BulkImport({ open, onOpenChange, defaultType = 'receipt' }: Bulk
           <div className="space-y-4">
             {/* Type selector */}
             <div className="space-y-2">
-              <Label>Type de factures</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={flowType === 'receipt' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFlowType('receipt')}
-                >
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />
-                  Factures de vente (encaissements)
+              <Label>Type d'import</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button variant={flowType === 'receipt' ? 'default' : 'outline'} size="sm" onClick={() => setFlowType('receipt')}>
+                  <ArrowDownToLine className="h-3.5 w-3.5 mr-1.5" />Factures vente
                 </Button>
-                <Button
-                  variant={flowType === 'disbursement' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFlowType('disbursement')}
-                >
-                  <ArrowUpFromLine className="h-4 w-4 mr-2" />
-                  Factures d'achat (decaissements)
+                <Button variant={flowType === 'disbursement' ? 'default' : 'outline'} size="sm" onClick={() => setFlowType('disbursement')}>
+                  <ArrowUpFromLine className="h-3.5 w-3.5 mr-1.5" />Factures achat
+                </Button>
+                <Button variant={flowType === 'payroll' ? 'default' : 'outline'} size="sm" onClick={() => setFlowType('payroll')}>
+                  <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Salaires
+                </Button>
+                <Button variant={flowType === 'tax' ? 'default' : 'outline'} size="sm" onClick={() => setFlowType('tax')}>
+                  <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Taxes / Impots
+                </Button>
+                <Button variant={flowType === 'loan' ? 'default' : 'outline'} size="sm" onClick={() => setFlowType('loan')}>
+                  <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Echeances emprunts
                 </Button>
               </div>
             </div>
@@ -309,7 +377,7 @@ export function BulkImport({ open, onOpenChange, defaultType = 'receipt' }: Bulk
                   <div>
                     <p className="text-sm font-medium">1. Telechargez le modele</p>
                     <p className="text-xs text-muted-foreground">
-                      Remplissez vos {flowType === 'receipt' ? '60+ factures de vente' : '60+ factures d\'achat'} dans le template Excel
+                      Remplissez vos donnees dans le template Excel — {TYPE_LABELS[flowType]}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => downloadInvoiceTemplate(flowType)}>
@@ -469,7 +537,7 @@ export function BulkImport({ open, onOpenChange, defaultType = 'receipt' }: Bulk
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Les factures importees apparaissent dans {flowType === 'receipt' ? 'Encaissements' : 'Decaissements'} et dans les previsions Proph3t.
+                Les donnees importees apparaissent dans les flux de tresorerie et dans les previsions Proph3t.
                 Les echeances sont integrees dans le calendrier de tresorerie.
               </p>
             </CardContent>
@@ -485,7 +553,7 @@ export function BulkImport({ open, onOpenChange, defaultType = 'receipt' }: Bulk
               <Button variant="outline" onClick={handleReset}>Retour</Button>
               <Button onClick={handleImport} disabled={importing || stats.valid + stats.warnings === 0}>
                 {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Importer {stats.valid + stats.warnings} facture(s)
+                Importer {stats.valid + stats.warnings} ligne(s)
               </Button>
             </>
           )}
