@@ -17,8 +17,6 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CurrencyDisplay } from '@/components/shared/currency-display';
-
 import { reconciliationService } from '../services/reconciliation.service';
 import type { ReconciliationItem } from '../types';
 

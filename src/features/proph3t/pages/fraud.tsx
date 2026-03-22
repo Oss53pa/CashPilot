@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  Shield, ShieldAlert, ShieldCheck, ShieldOff, Eye, Search as SearchIcon,
+  Shield, ShieldAlert, ShieldCheck, Eye,
   AlertTriangle, CheckCircle, XCircle, Clock, HelpCircle,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

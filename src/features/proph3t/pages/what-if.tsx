@@ -8,7 +8,6 @@ import {
 
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 // ---------------------------------------------------------------------------
 // Types

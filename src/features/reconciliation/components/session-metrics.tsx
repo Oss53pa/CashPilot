@@ -1,4 +1,4 @@
-import { BarChart3, Clock, CheckCircle2, XCircle, SkipForward, Zap, Users } from 'lucide-react';
+import { BarChart3, Clock, CheckCircle2, XCircle, Zap, Users } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 

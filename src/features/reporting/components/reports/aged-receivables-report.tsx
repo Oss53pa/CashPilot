@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line,
   PieChart, Pie, Cell,
 } from 'recharts';
@@ -12,14 +12,12 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { CurrencyDisplay } from '@/components/shared/currency-display';
 import { cn } from '@/lib/utils';
 import {
-  AlertTriangle, TrendingUp, TrendingDown, Users, Send, FileText,
   ChevronDown, ChevronRight,
 } from 'lucide-react';
 
@@ -73,11 +71,6 @@ const DSO_HISTORY = [
   { month: 'Jan 26', dso: 35 }, { month: 'Fev', dso: 36 }, { month: 'Mar', dso: 38 },
 ];
 
-const bucketColors: Record<string, string> = {
-  not_due: '#e5e7eb', days_1_30: '#fef08a', days_31_60: '#fdba74',
-  days_61_90: '#f97316', over_90: '#ef4444',
-};
-
 const statusConfig: Record<string, { label: string; cls: string }> = {
   normal: { label: 'Normal', cls: 'text-green-700 bg-green-50' },
   late: { label: 'En retard', cls: 'text-orange-700 bg-orange-50' },
@@ -92,7 +85,6 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
 // ============================================================================
 
 export function AgedReceivablesReport() {
-  const { t } = useTranslation();
   const [view, setView] = useState<string>('standard');
   const [expandedZones, setExpandedZones] = useState<Set<string>>(new Set(['Zone A', 'Zone B', 'Contentieux', 'Autres']));
 

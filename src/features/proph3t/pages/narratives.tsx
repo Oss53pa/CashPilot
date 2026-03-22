@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { BookOpen, RefreshCw, Globe, Clock, TrendingUp, AlertTriangle, Lightbulb, Target } from 'lucide-react';
+import { RefreshCw, Globe, Clock, TrendingUp, AlertTriangle, Lightbulb, Target } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 // ---------------------------------------------------------------------------

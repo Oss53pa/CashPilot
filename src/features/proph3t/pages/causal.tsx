@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Brain, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent } from '@/components/ui/card';

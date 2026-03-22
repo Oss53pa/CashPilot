@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
 import {
-  TrendingUp, Brain, Clock, Database, Activity, CheckCircle, AlertTriangle,
+  TrendingUp, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,

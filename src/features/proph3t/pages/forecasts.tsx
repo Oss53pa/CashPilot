@@ -23,7 +23,6 @@ import type {
   CalibrationData,
   UncertaintyDecomposition,
   FanChartPoint,
-  ProbabilityQuery,
 } from '../components/uncertainty/uncertainty-types';
 import * as proph3tService from '../services/proph3t.service';
 
