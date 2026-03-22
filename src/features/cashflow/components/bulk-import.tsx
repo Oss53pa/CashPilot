@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-  Upload, Download, FileSpreadsheet, CheckCircle2, AlertTriangle,
+  Download, FileSpreadsheet, CheckCircle2, AlertTriangle,
   XCircle, Loader2, ArrowDownToLine, ArrowUpFromLine,
 } from 'lucide-react';
 
@@ -12,14 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { FileUpload } from '@/components/shared/file-upload';
-import { CurrencyDisplay } from '@/components/shared/currency-display';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 import * as XLSX from 'xlsx';
@@ -200,7 +195,7 @@ function parseExcelInvoices(file: File): Promise<ParsedInvoice[]> {
         // Find header row (first row with "Date" or "Contrepartie")
         let headerIdx = -1;
         for (let i = 0; i < Math.min(rawRows.length, 15); i++) {
-          const row = rawRows[i] as unknown[];
+          const row = rawRows[i] as unknown as unknown[];
           if (row?.some(cell => String(cell || '').toLowerCase().includes('date') || String(cell || '').toLowerCase().includes('contrepartie'))) {
             headerIdx = i;
             break;
@@ -212,7 +207,7 @@ function parseExcelInvoices(file: File): Promise<ParsedInvoice[]> {
         const dataRows = rawRows.slice(headerIdx + 1);
 
         for (let i = 0; i < dataRows.length; i++) {
-          const row = dataRows[i] as unknown[];
+          const row = dataRows[i] as unknown as unknown[];
           if (!row || row.length < 5) continue;
 
           // Skip empty rows

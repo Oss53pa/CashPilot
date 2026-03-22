@@ -706,8 +706,6 @@ export const dashboardService = {
     const dailyBurn = monthDisb > 0 ? monthDisb / 30 : 1;
     const daysCashOnHand = dailyBurn > 0 ? Math.round(totalBalance / dailyBurn) : 0;
 
-    // DSO: average days from operation_date to value_date for receipts
-    const receiptsWithDates = (monthFlows ?? []).filter((f) => f.type === 'receipt');
     const financialRatios: FinancialRatio[] = [
       {
         name: 'Days Cash on Hand',

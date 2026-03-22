@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
-  Clock, Settings, Users, Calendar, History, ChevronRight,
-  AlertTriangle, Brain, Lock, Unlock, Search,
+  Clock, Settings, Users, Calendar, History,
+  AlertTriangle, Brain, Lock, Search,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,

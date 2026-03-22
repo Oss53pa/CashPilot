@@ -1,5 +1,5 @@
 import {
-  TrendingUp, CheckCircle, AlertTriangle,
+  TrendingUp, Brain, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,

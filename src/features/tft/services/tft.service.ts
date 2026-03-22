@@ -398,8 +398,8 @@ export const tftService = {
   },
 
   async certifyTFT(
-    tftId: string,
-    userId: string,
+    _tftId: string,
+    _userId: string,
   ): Promise<{ success: boolean; certified_at: string }> {
     // TFT certification could be stored in a dedicated table
     // For now, return success

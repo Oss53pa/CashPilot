@@ -433,7 +433,7 @@ export const rollingForecastService = {
       (c) => c.budget_amount - c.spent_amount > 0,
     );
 
-    const { data: debts } = await supabase
+    await supabase
       .from('debt_contracts')
       .select('covenants')
       .eq('company_id', companyId)

@@ -61,7 +61,7 @@ export function useDeleteCounterparty(companyId: string) {
 
 // --- Payment Profile ---
 
-export function usePaymentProfile(counterpartyId: string, counterpartyName?: string) {
+export function usePaymentProfile(counterpartyId: string, _counterpartyName?: string) {
   return useQuery({
     queryKey: ['payment-profile', counterpartyId],
     queryFn: () => counterpartiesService.getPaymentProfile(counterpartyId),
@@ -127,7 +127,7 @@ export function useApplyIndexation() {
 
 // --- Cold-Start Profile ---
 
-export function useColdStartProfile(counterpartyId: string, counterpartyName?: string) {
+export function useColdStartProfile(counterpartyId: string, _counterpartyName?: string) {
   return useQuery({
     queryKey: ['cold-start-profile', counterpartyId],
     queryFn: () => counterpartiesService.getColdStartProfile(counterpartyId),
@@ -169,7 +169,7 @@ export function useUpdateCounterpartyCertainty() {
 
 // --- Tenant Full Profile (10 tabs) ---
 
-export function useTenantFullProfile(counterpartyId: string, counterpartyName?: string) {
+export function useTenantFullProfile(counterpartyId: string, _counterpartyName?: string) {
   return useQuery({
     queryKey: ['tenant-full-profile', counterpartyId],
     queryFn: () => counterpartiesService.getTenantFullProfile(counterpartyId),

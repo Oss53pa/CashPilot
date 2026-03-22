@@ -92,7 +92,7 @@ export default function ConsolidationPage() {
           <ConsolidationConfigPanel
             config={consolidationConfig}
             isLoading={configLoading}
-            onUpdate={(data) => updateConfig.mutate(data)}
+            onUpdate={(data) => updateConfig.mutate({ tenantId: tenantId!, data })}
           />
         </TabsContent>
 

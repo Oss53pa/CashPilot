@@ -31,7 +31,7 @@ export default function TransfersPage() {
   const companyId = currentCompany?.id;
 
   const [activeTab, setActiveTab] = useState('all');
-  const [filters, setFilters] = useState<TransferFilters>({});
+  const [filters] = useState<TransferFilters>({});
 
   const effectiveFilters = useMemo<TransferFilters>(() => {
     const base = { ...filters };

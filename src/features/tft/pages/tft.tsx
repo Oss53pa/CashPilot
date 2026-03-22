@@ -3,13 +3,11 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
-  FileDown,
   ShieldCheck,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
