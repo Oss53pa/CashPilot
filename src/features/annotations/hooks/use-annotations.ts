@@ -1,26 +1,30 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { annotationsService } from '../services/annotations.service';
-import type { AnnotationFilter, AnnotationFormData } from '../types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { annotationsService } from "../services/annotations.service";
+import type { AnnotationFilter, AnnotationFormData } from "../types";
 
 const KEYS = {
-  all: ['annotations'] as const,
-  list: (companyId: string, filter?: AnnotationFilter) =>
-    [...KEYS.all, 'list', companyId, filter] as const,
-  thread: (id: string) => [...KEYS.all, 'thread', id] as const,
+  all: ["annotations"] as const,
+  list: (companyId: string | undefined, filter?: AnnotationFilter) =>
+    [...KEYS.all, "list", companyId, filter] as const,
+  thread: (id: string) => [...KEYS.all, "thread", id] as const,
   entity: (entityType: string, entityId: string) =>
-    [...KEYS.all, 'entity', entityType, entityId] as const,
-  stats: (companyId: string) => [...KEYS.all, 'stats', companyId] as const,
+    [...KEYS.all, "entity", entityType, entityId] as const,
+  stats: (companyId: string | undefined) =>
+    [...KEYS.all, "stats", companyId] as const,
   search: (companyId: string, query: string) =>
-    [...KEYS.all, 'search', companyId, query] as const,
-  mentions: (userId: string) => [...KEYS.all, 'mentions', userId] as const,
-  feed: (userId: string) => [...KEYS.all, 'feed', userId] as const,
-  users: () => [...KEYS.all, 'users'] as const,
+    [...KEYS.all, "search", companyId, query] as const,
+  mentions: (userId: string) => [...KEYS.all, "mentions", userId] as const,
+  feed: (userId: string) => [...KEYS.all, "feed", userId] as const,
+  users: () => [...KEYS.all, "users"] as const,
 };
 
-export function useAnnotations(companyId: string, filter?: AnnotationFilter) {
+export function useAnnotations(
+  companyId: string | undefined,
+  filter?: AnnotationFilter,
+) {
   return useQuery({
     queryKey: KEYS.list(companyId, filter),
-    queryFn: () => annotationsService.getAnnotations(companyId, filter),
+    queryFn: () => annotationsService.getAnnotations(companyId!, filter),
     enabled: !!companyId,
   });
 }
@@ -36,15 +40,16 @@ export function useAnnotationThread(annotationId: string) {
 export function useAnnotationsForEntity(entityType: string, entityId: string) {
   return useQuery({
     queryKey: KEYS.entity(entityType, entityId),
-    queryFn: () => annotationsService.getAnnotationsForEntity(entityType, entityId),
+    queryFn: () =>
+      annotationsService.getAnnotationsForEntity(entityType, entityId),
     enabled: !!entityType && !!entityId,
   });
 }
 
-export function useAnnotationStats(companyId: string) {
+export function useAnnotationStats(companyId: string | undefined) {
   return useQuery({
     queryKey: KEYS.stats(companyId),
-    queryFn: () => annotationsService.getAnnotationStats(companyId),
+    queryFn: () => annotationsService.getAnnotationStats(companyId!),
     enabled: !!companyId,
   });
 }
@@ -83,7 +88,8 @@ export function useAnnotationUsers() {
 export function useCreateAnnotation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: AnnotationFormData) => annotationsService.createAnnotation(data),
+    mutationFn: (data: AnnotationFormData) =>
+      annotationsService.createAnnotation(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KEYS.all });
     },

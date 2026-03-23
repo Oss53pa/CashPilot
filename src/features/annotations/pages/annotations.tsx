@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MessageSquare,
   Search,
@@ -6,129 +7,156 @@ import {
   AlertTriangle,
   AtSign,
   Filter,
-} from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import {
-  useAnnotations,
-  useAnnotationStats,
-} from '../hooks/use-annotations';
-import { AnnotationThread } from '../components/annotation-thread';
-import { AnnotationPanel } from '../components/annotation-panel';
-import type { AnnotationFilter, Annotation, EntityType, AnnotationType } from '../types';
-
-const COMPANY_ID = 'company-1';
-
-const ENTITY_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'Tous les objets' },
-  { value: 'cash_flow', label: 'Flux de tresorerie' },
-  { value: 'receivable', label: 'Creances' },
-  { value: 'payable', label: 'Fournisseurs' },
-  { value: 'forecast', label: 'Previsions' },
-  { value: 'alert', label: 'Alertes' },
-  { value: 'budget_line', label: 'Budget' },
-  { value: 'dispute', label: 'Contentieux' },
-  { value: 'capex', label: 'CAPEX' },
-  { value: 'bank_account', label: 'Comptes bancaires' },
-  { value: 'counterparty', label: 'Contreparties' },
-  { value: 'tft_line', label: 'Lignes TFT' },
-  { value: 'forecast_cell', label: 'Cellules prevision' },
-];
-
-const ANNOTATION_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'Tous les types' },
-  { value: 'comment', label: 'Commentaires' },
-  { value: 'flag', label: 'Signalements' },
-  { value: 'tag', label: 'Tags' },
-  { value: 'document_link', label: 'Documents' },
-];
-
-const RESOLVED_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'Tous' },
-  { value: 'unresolved', label: 'Non resolus' },
-  { value: 'resolved', label: 'Resolus' },
-];
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { useAnnotations, useAnnotationStats } from "../hooks/use-annotations";
+import { AnnotationThread } from "../components/annotation-thread";
+import { AnnotationPanel } from "../components/annotation-panel";
+import type {
+  AnnotationFilter,
+  Annotation,
+  EntityType,
+  AnnotationType,
+} from "../types";
+import { useCompanyStore } from "@/stores/company.store";
 
 export default function AnnotationsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [entityTypeFilter, setEntityTypeFilter] = useState('all');
-  const [annotationTypeFilter, setAnnotationTypeFilter] = useState('all');
-  const [resolvedFilter, setResolvedFilter] = useState('all');
-  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
+  const { t } = useTranslation("annotations");
+  const company = useCompanyStore((s) => s.currentCompany);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [entityTypeFilter, setEntityTypeFilter] = useState("all");
+  const [annotationTypeFilter, setAnnotationTypeFilter] = useState("all");
+  const [resolvedFilter, setResolvedFilter] = useState("all");
+  const [selectedAnnotation, setSelectedAnnotation] =
+    useState<Annotation | null>(null);
+
+  const ENTITY_TYPE_OPTIONS = [
+    { value: "all", label: t("entityType.all") },
+    { value: "cash_flow", label: t("entityType.cash_flow") },
+    { value: "receivable", label: t("entityType.receivable") },
+    { value: "payable", label: t("entityType.payable") },
+    { value: "forecast", label: t("entityType.forecast") },
+    { value: "alert", label: t("entityType.alert") },
+    { value: "budget_line", label: t("entityType.budget_line") },
+    { value: "dispute", label: t("entityType.dispute") },
+    { value: "capex", label: t("entityType.capex") },
+    { value: "bank_account", label: t("entityType.bank_account") },
+    { value: "counterparty", label: t("entityType.counterparty") },
+    { value: "tft_line", label: t("entityType.tft_line") },
+    { value: "forecast_cell", label: t("entityType.forecast_cell") },
+  ];
+
+  const ANNOTATION_TYPE_OPTIONS = [
+    { value: "all", label: t("annotationType.all") },
+    { value: "comment", label: t("annotationType.comment") },
+    { value: "flag", label: t("annotationType.flag") },
+    { value: "tag", label: t("annotationType.tag") },
+    { value: "document_link", label: t("annotationType.document_link") },
+  ];
+
+  const RESOLVED_OPTIONS = [
+    { value: "all", label: t("resolved.all") },
+    { value: "unresolved", label: t("resolved.unresolved") },
+    { value: "resolved", label: t("resolved.resolved") },
+  ];
 
   const filter: AnnotationFilter = {
-    ...(entityTypeFilter !== 'all' ? { entity_type: entityTypeFilter as EntityType } : {}),
-    ...(annotationTypeFilter !== 'all' ? { type: annotationTypeFilter as AnnotationType } : {}),
-    ...(resolvedFilter === 'resolved' ? { is_resolved: true } : {}),
-    ...(resolvedFilter === 'unresolved' ? { is_resolved: false } : {}),
+    ...(entityTypeFilter !== "all"
+      ? { entity_type: entityTypeFilter as EntityType }
+      : {}),
+    ...(annotationTypeFilter !== "all"
+      ? { type: annotationTypeFilter as AnnotationType }
+      : {}),
+    ...(resolvedFilter === "resolved" ? { is_resolved: true } : {}),
+    ...(resolvedFilter === "unresolved" ? { is_resolved: false } : {}),
     ...(searchQuery.length >= 2 ? { search: searchQuery } : {}),
   };
 
-  const { data: annotations = [], isLoading } = useAnnotations(COMPANY_ID, filter);
-  const { data: stats } = useAnnotationStats(COMPANY_ID);
+  const companyId = company?.id;
+  const { data: annotations = [], isLoading } = useAnnotations(
+    companyId,
+    filter,
+  );
+  const { data: stats } = useAnnotationStats(companyId);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Annotations & Commentaires"
-        description="Recherchez, filtrez et gerez toutes les annotations du systeme."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
 
       {/* Stats cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.total")}
+            </CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.total ?? '-'}</div>
+            <div className="text-2xl font-bold">{stats?.total ?? "-"}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Non resolus</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.unresolved")}
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats?.unresolved ?? '-'}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats?.unresolved ?? "-"}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Drapeaux critiques</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.criticalFlags")}
+            </CardTitle>
             <Flag className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.flags_critical ?? '-'}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats?.flags_critical ?? "-"}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Drapeaux attention</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.warningFlags")}
+            </CardTitle>
             <Flag className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats?.flags_warning ?? '-'}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats?.flags_warning ?? "-"}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mes mentions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.myMentions")}
+            </CardTitle>
             <AtSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats?.mentions_unread ?? '-'}</div>
+            <div className="text-2xl font-bold text-primary">
+              {stats?.mentions_unread ?? "-"}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -138,7 +166,7 @@ export default function AnnotationsPage() {
         <div className="relative flex-1 min-w-[250px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher dans les annotations..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -158,7 +186,10 @@ export default function AnnotationsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={annotationTypeFilter} onValueChange={setAnnotationTypeFilter}>
+          <Select
+            value={annotationTypeFilter}
+            onValueChange={setAnnotationTypeFilter}
+          >
             <SelectTrigger className="h-9 text-sm w-auto min-w-[150px]">
               <SelectValue />
             </SelectTrigger>
@@ -202,10 +233,8 @@ export default function AnnotationsPage() {
           {!isLoading && annotations.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="text-lg font-medium">Aucune annotation trouvee</p>
-              <p className="text-sm mt-1">
-                Modifiez vos filtres ou effectuez une autre recherche.
-              </p>
+              <p className="text-lg font-medium">{t("noResults")}</p>
+              <p className="text-sm mt-1">{t("noResultsHint")}</p>
             </div>
           )}
 
@@ -219,10 +248,13 @@ export default function AnnotationsPage() {
                   onClick={() => setSelectedAnnotation(annotation)}
                 >
                   <Badge variant="outline" className="text-[10px] h-4">
-                    {ENTITY_TYPE_OPTIONS.find((o) => o.value === annotation.entity_type)?.label ??
-                      annotation.entity_type}
+                    {ENTITY_TYPE_OPTIONS.find(
+                      (o) => o.value === annotation.entity_type,
+                    )?.label ?? annotation.entity_type}
                   </Badge>
-                  <span className="truncate max-w-[400px]">{annotation.entity_label}</span>
+                  <span className="truncate max-w-[400px]">
+                    {annotation.entity_label}
+                  </span>
                 </button>
               )}
               <AnnotationThread annotationId={annotation.id} />
@@ -234,47 +266,51 @@ export default function AnnotationsPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Resume</CardTitle>
+              <CardTitle className="text-sm">{t("summary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Annotations affichees</span>
+                <span className="text-muted-foreground">{t("displayed")}</span>
                 <span className="font-semibold">{annotations.length}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Commentaires</span>
+                <span className="text-muted-foreground">{t("comments")}</span>
                 <span className="font-semibold">
-                  {annotations.filter((a) => a.type === 'comment').length}
+                  {annotations.filter((a) => a.type === "comment").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Signalements</span>
+                <span className="text-muted-foreground">{t("flags")}</span>
                 <span className="font-semibold">
-                  {annotations.filter((a) => a.type === 'flag').length}
+                  {annotations.filter((a) => a.type === "flag").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tags</span>
+                <span className="text-muted-foreground">{t("tags")}</span>
                 <span className="font-semibold">
-                  {annotations.filter((a) => a.type === 'tag').length}
+                  {annotations.filter((a) => a.type === "tag").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Documents</span>
+                <span className="text-muted-foreground">{t("documents")}</span>
                 <span className="font-semibold">
-                  {annotations.filter((a) => a.type === 'document_link').length}
+                  {annotations.filter((a) => a.type === "document_link").length}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Resolus</span>
+                <span className="text-muted-foreground">
+                  {t("resolvedCount")}
+                </span>
                 <span className="font-semibold text-green-600">
                   {annotations.filter((a) => a.is_resolved).length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Non resolus</span>
+                <span className="text-muted-foreground">
+                  {t("unresolvedCount")}
+                </span>
                 <span className="font-semibold text-yellow-600">
                   {annotations.filter((a) => !a.is_resolved).length}
                 </span>
@@ -286,7 +322,7 @@ export default function AnnotationsPage() {
           {stats?.recent && stats.recent.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Activite recente</CardTitle>
+                <CardTitle className="text-sm">{t("recentActivity")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {stats.recent.slice(0, 5).map((a) => (
@@ -294,13 +330,15 @@ export default function AnnotationsPage() {
                     <div className="flex items-center gap-1">
                       <span className="font-medium">{a.author_name}</span>
                       <span className="text-muted-foreground">
-                        {new Date(a.created_at).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: 'short',
+                        {new Date(a.created_at).toLocaleDateString("fr-FR", {
+                          day: "2-digit",
+                          month: "short",
                         })}
                       </span>
                     </div>
-                    <p className="text-muted-foreground line-clamp-1">{a.content}</p>
+                    <p className="text-muted-foreground line-clamp-1">
+                      {a.content}
+                    </p>
                   </div>
                 ))}
               </CardContent>
