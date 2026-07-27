@@ -3,29 +3,35 @@
  * Used by anomaly-scan, fraud-check, and behavior-score.
  */
 
-import { mean, stddev, zScore, sum } from './statistics.ts'
-import { daysDiff } from './date-utils.ts'
+import { mean, stddev, zScore, sum as _sum } from "./statistics.ts";
+import { daysDiff } from "./date-utils.ts";
 
 // ============================================================================
 // COUNTERPARTY PROFILING
 // ============================================================================
 
 export interface CounterpartyProfile {
-  transaction_count: number
-  avg_amount: number
-  stddev_amount: number
-  last_transaction_date: string | null
-  days_since_last: number
-  is_known: boolean
-  first_seen_days_ago: number
+  transaction_count: number;
+  avg_amount: number;
+  stddev_amount: number;
+  last_transaction_date: string | null;
+  days_since_last: number;
+  is_known: boolean;
+  first_seen_days_ago: number;
 }
 
 export function buildCounterpartyProfile(
-  transactions: { amount: number; flow_date: string; counterparty_id: string | null }[],
+  transactions: {
+    amount: number;
+    flow_date: string;
+    counterparty_id: string | null;
+  }[],
   counterpartyId: string | null,
-  referenceDate: string
+  referenceDate: string,
 ): CounterpartyProfile {
-  const matched = transactions.filter(t => t.counterparty_id === counterpartyId)
+  const matched = transactions.filter(
+    (t) => t.counterparty_id === counterpartyId,
+  );
 
   if (matched.length === 0) {
     return {
@@ -36,11 +42,11 @@ export function buildCounterpartyProfile(
       days_since_last: 999,
       is_known: false,
       first_seen_days_ago: 0,
-    }
+    };
   }
 
-  const amounts = matched.map(t => t.amount)
-  const dates = matched.map(t => t.flow_date).sort()
+  const amounts = matched.map((t) => t.amount);
+  const dates = matched.map((t) => t.flow_date).sort();
 
   return {
     transaction_count: matched.length,
@@ -50,7 +56,7 @@ export function buildCounterpartyProfile(
     days_since_last: daysDiff(dates[dates.length - 1], referenceDate),
     is_known: true,
     first_seen_days_ago: daysDiff(dates[0], referenceDate),
-  }
+  };
 }
 
 // ============================================================================
@@ -58,39 +64,54 @@ export function buildCounterpartyProfile(
 // ============================================================================
 
 export interface VelocityMetrics {
-  count_24h: number
-  count_48h: number
-  count_7d: number
-  total_amount_24h: number
-  total_amount_48h: number
-  total_amount_7d: number
-  avg_interval_days: number
+  count_24h: number;
+  count_48h: number;
+  count_7d: number;
+  total_amount_24h: number;
+  total_amount_48h: number;
+  total_amount_7d: number;
+  avg_interval_days: number;
 }
 
 export function computeVelocity(
   transactions: { amount: number; flow_date: string }[],
-  referenceDate: string
+  referenceDate: string,
 ): VelocityMetrics {
-  const sorted = [...transactions].sort((a, b) => a.flow_date.localeCompare(b.flow_date))
+  const sorted = [...transactions].sort((a, b) =>
+    a.flow_date.localeCompare(b.flow_date),
+  );
 
-  let count24h = 0, count48h = 0, count7d = 0
-  let total24h = 0, total48h = 0, total7d = 0
+  let count24h = 0,
+    count48h = 0,
+    count7d = 0;
+  let total24h = 0,
+    total48h = 0,
+    total7d = 0;
 
   for (const t of sorted) {
-    const diff = daysDiff(t.flow_date, referenceDate)
-    if (diff <= 1) { count24h++; total24h += t.amount }
-    if (diff <= 2) { count48h++; total48h += t.amount }
-    if (diff <= 7) { count7d++; total7d += t.amount }
+    const diff = daysDiff(t.flow_date, referenceDate);
+    if (diff <= 1) {
+      count24h++;
+      total24h += t.amount;
+    }
+    if (diff <= 2) {
+      count48h++;
+      total48h += t.amount;
+    }
+    if (diff <= 7) {
+      count7d++;
+      total7d += t.amount;
+    }
   }
 
   // Average interval between consecutive transactions
-  let avgInterval = 0
+  let avgInterval = 0;
   if (sorted.length >= 2) {
-    const intervals: number[] = []
+    const intervals: number[] = [];
     for (let i = 1; i < sorted.length; i++) {
-      intervals.push(daysDiff(sorted[i - 1].flow_date, sorted[i].flow_date))
+      intervals.push(daysDiff(sorted[i - 1].flow_date, sorted[i].flow_date));
     }
-    avgInterval = mean(intervals)
+    avgInterval = mean(intervals);
   }
 
   return {
@@ -101,7 +122,7 @@ export function computeVelocity(
     total_amount_48h: total48h,
     total_amount_7d: total7d,
     avg_interval_days: avgInterval,
-  }
+  };
 }
 
 // ============================================================================
@@ -110,22 +131,22 @@ export function computeVelocity(
 
 export function computeZScoreFeatures(
   value: number,
-  historicalValues: number[]
+  historicalValues: number[],
 ): { z_score: number; percentile: number; is_outlier: boolean } {
   if (historicalValues.length < 3) {
-    return { z_score: 0, percentile: 0.5, is_outlier: false }
+    return { z_score: 0, percentile: 0.5, is_outlier: false };
   }
 
-  const z = zScore(value, historicalValues)
-  const sorted = [...historicalValues].sort((a, b) => a - b)
-  const belowCount = sorted.filter(v => v <= value).length
-  const percentile = belowCount / sorted.length
+  const z = zScore(value, historicalValues);
+  const sorted = [...historicalValues].sort((a, b) => a - b);
+  const belowCount = sorted.filter((v) => v <= value).length;
+  const percentile = belowCount / sorted.length;
 
   return {
     z_score: z,
     percentile,
     is_outlier: Math.abs(z) > 2.5,
-  }
+  };
 }
 
 // ============================================================================
@@ -134,9 +155,9 @@ export function computeZScoreFeatures(
 
 export function hourNormality(hour: number): number {
   // Business hours 8-18 are normal (score near 0), off-hours score higher
-  if (hour >= 8 && hour <= 18) return 0
-  if (hour >= 6 && hour <= 20) return 0.3
-  return 1.0 // Late night / early morning
+  if (hour >= 8 && hour <= 18) return 0;
+  if (hour >= 6 && hour <= 20) return 0.3;
+  return 1.0; // Late night / early morning
 }
 
 // ============================================================================
@@ -146,13 +167,16 @@ export function hourNormality(hour: number): number {
 export function sequentialCount(
   amounts: number[],
   targetAmount: number,
-  tolerance: number = 0.05
+  tolerance: number = 0.05,
 ): number {
-  let count = 0
+  let count = 0;
   for (const a of amounts) {
-    if (Math.abs(a - targetAmount) / Math.max(1, Math.abs(targetAmount)) <= tolerance) {
-      count++
+    if (
+      Math.abs(a - targetAmount) / Math.max(1, Math.abs(targetAmount)) <=
+      tolerance
+    ) {
+      count++;
     }
   }
-  return count
+  return count;
 }
