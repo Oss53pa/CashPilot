@@ -40,11 +40,11 @@ function _format(amount: number, options?: FormatFCFAOptions): string {
   let formatted: string;
 
   if (options?.compact && abs >= 1_000_000_000) {
-    formatted = `${(abs / 1_000_000_000).toFixed(1)}Mrd`;
+    formatted = `${(abs / 1_000_000_000).toFixed(1)} Mrd`;
   } else if (options?.compact && abs >= 1_000_000) {
-    formatted = `${(abs / 1_000_000).toFixed(1)}M`;
+    formatted = `${(abs / 1_000_000).toFixed(1)} M`;
   } else if (options?.compact && abs >= 1_000) {
-    formatted = `${(abs / 1_000).toFixed(0)}K`;
+    formatted = `${(abs / 1_000).toFixed(0)} K`;
   } else {
     formatted = abs.toLocaleString("fr-FR");
   }
