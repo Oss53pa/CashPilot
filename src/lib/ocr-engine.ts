@@ -1,4 +1,4 @@
-import Tesseract from 'tesseract.js';
+import Tesseract from "tesseract.js";
 
 // ============================================================================
 // OCR Engine — Browser-side text extraction using Tesseract.js (WASM)
@@ -25,23 +25,26 @@ export interface OcrLine {
  */
 export async function extractTextFromImage(
   file: File,
-  onProgress?: (progress: number, status: string) => void
+  onProgress?: (progress: number, status: string) => void,
 ): Promise<OcrResult> {
   const startTime = Date.now();
 
-  onProgress?.(0, 'Initialisation du moteur OCR...');
+  onProgress?.(0, "Initialisation du moteur OCR...");
 
-  const worker = await Tesseract.createWorker('fra+eng', 1, {
+  const worker = await Tesseract.createWorker("fra+eng", 1, {
     logger: (m) => {
-      if (m.status === 'recognizing text') {
-        onProgress?.(Math.round((m.progress || 0) * 100), 'Lecture du document...');
-      } else if (m.status === 'loading language traineddata') {
-        onProgress?.(10, 'Chargement du modele de langue...');
+      if (m.status === "recognizing text") {
+        onProgress?.(
+          Math.round((m.progress || 0) * 100),
+          "Lecture du document...",
+        );
+      } else if (m.status === "loading language traineddata") {
+        onProgress?.(10, "Chargement du modele de langue...");
       }
     },
   });
 
-  onProgress?.(20, 'Analyse du document...');
+  onProgress?.(20, "Analyse du document...");
 
   const { data } = await worker.recognize(file);
 
@@ -49,16 +52,32 @@ export async function extractTextFromImage(
 
   const processingTimeMs = Date.now() - startTime;
 
-  onProgress?.(100, 'Terminé');
+  onProgress?.(100, "Terminé");
 
   return {
     text: data.text,
     confidence: data.confidence / 100,
-    lines: ((data as unknown as { lines: { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }[] }).lines || []).map((line: { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }) => ({
-      text: line.text.trim(),
-      confidence: line.confidence / 100,
-      bbox: line.bbox,
-    })),
+    lines: (
+      (
+        data as unknown as {
+          lines: {
+            text: string;
+            confidence: number;
+            bbox: { x0: number; y0: number; x1: number; y1: number };
+          }[];
+        }
+      ).lines || []
+    ).map(
+      (line: {
+        text: string;
+        confidence: number;
+        bbox: { x0: number; y0: number; x1: number; y1: number };
+      }) => ({
+        text: line.text.trim(),
+        confidence: line.confidence / 100,
+        bbox: line.bbox,
+      }),
+    ),
     processingTimeMs,
   };
 }
@@ -70,11 +89,11 @@ export async function extractTextFromImage(
  */
 export async function extractTextFromPdf(
   file: File,
-  onProgress?: (progress: number, status: string) => void
+  onProgress?: (progress: number, status: string) => void,
 ): Promise<OcrResult> {
   const startTime = Date.now();
 
-  onProgress?.(0, 'Lecture du PDF...');
+  onProgress?.(0, "Lecture du PDF...");
 
   // Read file as ArrayBuffer
   const arrayBuffer = await file.arrayBuffer();
@@ -85,50 +104,72 @@ export async function extractTextFromPdf(
 
   if (directText.length > 100) {
     // PDF has extractable text — no OCR needed
-    onProgress?.(100, 'Texte extrait directement du PDF');
+    onProgress?.(100, "Texte extrait directement du PDF");
 
     return {
       text: directText,
       confidence: 0.95, // High confidence for direct text extraction
-      lines: directText.split('\n').filter(l => l.trim()).map(text => ({
-        text: text.trim(),
-        confidence: 0.95,
-        bbox: { x0: 0, y0: 0, x1: 0, y1: 0 },
-      })),
+      lines: directText
+        .split("\n")
+        .filter((l) => l.trim())
+        .map((text) => ({
+          text: text.trim(),
+          confidence: 0.95,
+          bbox: { x0: 0, y0: 0, x1: 0, y1: 0 },
+        })),
       processingTimeMs: Date.now() - startTime,
     };
   }
 
   // PDF is likely scanned — convert to image and OCR
-  onProgress?.(10, 'PDF scanne detecte — conversion en image...');
+  onProgress?.(10, "PDF scanne detecte — conversion en image...");
 
   // Convert PDF to image using canvas (requires pdf.js or similar)
   // For now, we'll pass the PDF file directly to Tesseract which can handle PDFs
-  const worker = await Tesseract.createWorker('fra+eng', 1, {
+  const worker = await Tesseract.createWorker("fra+eng", 1, {
     logger: (m) => {
-      if (m.status === 'recognizing text') {
-        onProgress?.(30 + Math.round((m.progress || 0) * 60), 'OCR en cours...');
+      if (m.status === "recognizing text") {
+        onProgress?.(
+          30 + Math.round((m.progress || 0) * 60),
+          "OCR en cours...",
+        );
       }
     },
   });
 
-  onProgress?.(25, 'Demarrage OCR...');
+  onProgress?.(25, "Demarrage OCR...");
 
   // Tesseract.js can process PDF files directly if they contain images
   const { data } = await worker.recognize(file);
 
   await worker.terminate();
 
-  onProgress?.(100, 'Terminé');
+  onProgress?.(100, "Terminé");
 
   return {
     text: data.text,
     confidence: data.confidence / 100,
-    lines: ((data as unknown as { lines: { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }[] }).lines || []).map((line: { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }) => ({
-      text: line.text.trim(),
-      confidence: line.confidence / 100,
-      bbox: line.bbox,
-    })),
+    lines: (
+      (
+        data as unknown as {
+          lines: {
+            text: string;
+            confidence: number;
+            bbox: { x0: number; y0: number; x1: number; y1: number };
+          }[];
+        }
+      ).lines || []
+    ).map(
+      (line: {
+        text: string;
+        confidence: number;
+        bbox: { x0: number; y0: number; x1: number; y1: number };
+      }) => ({
+        text: line.text.trim(),
+        confidence: line.confidence / 100,
+        bbox: line.bbox,
+      }),
+    ),
     processingTimeMs: Date.now() - startTime,
   };
 }
@@ -138,7 +179,7 @@ export async function extractTextFromPdf(
  * Parses PDF stream objects to find text content.
  */
 function extractPdfText(bytes: Uint8Array): string {
-  const decoder = new TextDecoder('latin1');
+  const decoder = new TextDecoder("latin1");
   const content = decoder.decode(bytes);
   const textParts: string[] = [];
 
@@ -164,7 +205,7 @@ function extractPdfText(bytes: Uint8Array): string {
       const arrContent = tjArrMatch[1];
       const strRegex = /\(([^)]*)\)/g;
       let strMatch;
-      let lineText = '';
+      let lineText = "";
       while ((strMatch = strRegex.exec(arrContent)) !== null) {
         lineText += decodePdfString(strMatch[1]);
       }
@@ -180,7 +221,7 @@ function extractPdfText(bytes: Uint8Array): string {
     }
   }
 
-  return textParts.join('\n');
+  return textParts.join("\n");
 }
 
 /**
@@ -188,24 +229,30 @@ function extractPdfText(bytes: Uint8Array): string {
  */
 function decodePdfString(raw: string): string {
   return raw
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r')
-    .replace(/\\t/g, '\t')
-    .replace(/\\\(/g, '(')
-    .replace(/\\\)/g, ')')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\");
 }
 
 /**
  * Parse transactions from OCR'd text.
  * Detects dates, amounts, references, and counterparties.
  */
-export function parseTransactionsFromText(text: string): ParsedOcrTransaction[] {
+export function parseTransactionsFromText(
+  text: string,
+): ParsedOcrTransaction[] {
   const transactions: ParsedOcrTransaction[] = [];
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 5);
 
-  const datePattern = /(\d{2}[/\-\.]\d{2}[/\-\.]\d{2,4})/;
-  const amountPattern = /([\d\s]{1,3}(?:[\s.]\d{3})*(?:[,\.]\d{2})?)\s*(?:FCFA|XOF|F\s*CFA)?/i;
+  const datePattern = /(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})/;
+  const amountPattern =
+    /([\d\s]{1,3}(?:[\s.]\d{3})*(?:[,.]\d{2})?)\s*(?:FCFA|XOF|F\s*CFA)?/i;
 
   for (const line of lines) {
     const dateMatch = line.match(datePattern);
@@ -213,12 +260,12 @@ export function parseTransactionsFromText(text: string): ParsedOcrTransaction[] 
 
     // Extract and normalize date
     const rawDate = dateMatch[1];
-    const dateParts = rawDate.split(/[/\-\.]/);
+    const dateParts = rawDate.split(/[/\-.]/);
     if (dateParts.length < 3) continue;
 
-    const day = dateParts[0].padStart(2, '0');
-    const month = dateParts[1].padStart(2, '0');
-    const year = dateParts[2].length === 2 ? '20' + dateParts[2] : dateParts[2];
+    const day = dateParts[0].padStart(2, "0");
+    const month = dateParts[1].padStart(2, "0");
+    const year = dateParts[2].length === 2 ? "20" + dateParts[2] : dateParts[2];
     const isoDate = `${year}-${month}-${day}`;
 
     // Extract amount
@@ -226,7 +273,10 @@ export function parseTransactionsFromText(text: string): ParsedOcrTransaction[] 
     const amtMatch = afterDate.match(amountPattern);
     if (!amtMatch) continue;
 
-    const rawAmount = amtMatch[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    const rawAmount = amtMatch[1]
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
     const amount = parseFloat(rawAmount);
     if (isNaN(amount) || amount === 0) continue;
 
@@ -236,11 +286,11 @@ export function parseTransactionsFromText(text: string): ParsedOcrTransaction[] 
 
     // Extract description
     let desc = line
-      .replace(datePattern, '')
-      .replace(amountPattern, '')
-      .replace(/\s+/g, ' ')
+      .replace(datePattern, "")
+      .replace(amountPattern, "")
+      .replace(/\s+/g, " ")
       .trim();
-    if (!desc) desc = 'Transaction';
+    if (!desc) desc = "Transaction";
 
     transactions.push({
       date: isoDate,
